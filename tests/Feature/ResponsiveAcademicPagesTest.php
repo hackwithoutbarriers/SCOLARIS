@@ -11,6 +11,17 @@ class ResponsiveAcademicPagesTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_filament_login_is_available_for_mobile_and_desktop_layouts(): void
+    {
+        foreach ([320, 375, 390, 768, 1280] as $viewport) {
+            $this->withHeader('Viewport-Width', (string) $viewport)
+                ->get('/admin/login')
+                ->assertOk()
+                ->assertSee('Adresse e-mail')
+                ->assertSee('Mot de passe');
+        }
+    }
+
     /**
      * Server-side smoke coverage for the mobile-first pages. Visual viewport checks
      * are documented in docs/responsive-validation.md because this project has no browser runner.
