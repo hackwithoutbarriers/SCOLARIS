@@ -14,7 +14,9 @@ services:
       - key: APP_KEY
         sync: false
       - key: APP_URL
-        sync: false
+        value: https://scolaris-p8px.onrender.com
+      - key: ASSET_URL
+        value: https://scolaris-p8px.onrender.com
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
