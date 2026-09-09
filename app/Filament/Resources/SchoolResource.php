@@ -20,8 +20,10 @@ class SchoolResource extends Resource
     protected static ?string $navigationLabel = 'Écoles';
     public static function canAccess(): bool { return auth()->user()?->isSuperAdmin() ?? false; }
     public static function form(Form $form): Form { return $form->schema([
-        TextInput::make('name')->required(), TextInput::make('code')->required()->unique(ignoreRecord: true),
-        TextInput::make('email')->email(), TextInput::make('phone'), TextInput::make('city'),
+        TextInput::make('name')->required()->maxLength(255),
+        TextInput::make('code')->required()->alphaDash()->maxLength(50)->unique(ignoreRecord: true),
+        TextInput::make('email')->email(), TextInput::make('phone'), TextInput::make('address'),
+        TextInput::make('city'), TextInput::make('timezone')->default('Africa/Lome'),
         TextInput::make('country')->default('Togo')->required(), Toggle::make('active')->default(true),
     ]); }
     public static function table(Table $table): Table { return $table->columns([
