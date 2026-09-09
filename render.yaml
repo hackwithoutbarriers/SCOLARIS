@@ -53,7 +53,7 @@ services:
     name: scolaris-worker
     runtime: docker
     plan: starter
-    dockerCommand: /usr/local/bin/start-worker.sh
+    dockerCommand: sh /usr/local/bin/start-worker.sh
     envVars:
       - key: APP_ENV
         value: production
@@ -81,7 +81,7 @@ services:
     name: scolaris-scheduler
     runtime: docker
     schedule: "0 5 * * *"
-    dockerCommand: /usr/local/bin/run-scheduler.sh
+    dockerCommand: sh /usr/local/bin/run-scheduler.sh
     envVars:
       - key: APP_ENV
         value: production

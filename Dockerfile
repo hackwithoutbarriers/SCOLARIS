@@ -32,11 +32,12 @@ COPY --from=frontend /app/public/build ./public/build
 COPY docker/entrypoint.sh /usr/local/bin/scolaris-entrypoint
 COPY docker/start-worker.sh /usr/local/bin/start-worker.sh
 COPY docker/run-scheduler.sh /usr/local/bin/run-scheduler.sh
-RUN chmod +x /usr/local/bin/scolaris-entrypoint /usr/local/bin/start-worker.sh /usr/local/bin/run-scheduler.sh \
+RUN sed -i 's/\r$//' /usr/local/bin/scolaris-entrypoint /usr/local/bin/start-worker.sh /usr/local/bin/run-scheduler.sh \
+    && chmod +x /usr/local/bin/scolaris-entrypoint /usr/local/bin/start-worker.sh /usr/local/bin/run-scheduler.sh \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD php artisan about --only=environment >/dev/null || exit 1
-ENTRYPOINT ["scolaris-entrypoint"]
+ENTRYPOINT ["sh", "/usr/local/bin/scolaris-entrypoint"]
 CMD ["apache2-foreground"]
