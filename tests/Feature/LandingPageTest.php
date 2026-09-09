@@ -11,6 +11,6 @@ class LandingPageTest extends TestCase
         $this->get('/')->assertOk()
             ->assertSee('Se connecter')
             ->assertSee('Demander un accès')
-            ->assertSee('SaaS Owner');
+            ->assertSee('Démarrage guidé');
     }
 }

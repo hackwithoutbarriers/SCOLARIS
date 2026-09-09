@@ -29,18 +29,18 @@ class ResponsiveAcademicPagesTest extends TestCase
     }
 
     public function test_finance_pages_are_available_at_all_supported_viewports(): void
-        {
-            $school = School::factory()->create();
-            $user = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
+    {
+        $school = School::factory()->create();
+        $user = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
 
-            foreach ([320, 375, 390, 768, 1280] as $viewport) {
-                $headers = ['Viewport-Width' => (string) $viewport];
-                $this->withHeaders($headers)->actingAs($user)->get('/admin/payments')
-                    ->assertOk()->assertSee('Payments');
-                $this->withHeaders($headers)->actingAs($user)->get('/admin/payments/create')
-                    ->assertOk()->assertSee('Amount');
-                $this->withHeaders($headers)->actingAs($user)->get('/admin/fee-structures')
-                    ->assertOk()->assertSee('Fee structures');
+        foreach ([320, 375, 390, 768, 1280] as $viewport) {
+            $headers = ['Viewport-Width' => (string) $viewport];
+            $this->withHeaders($headers)->actingAs($user)->get('/admin/payments')
+                ->assertOk()->assertSee('Paiements');
+            $this->withHeaders($headers)->actingAs($user)->get('/admin/payments/create')
+                ->assertOk()->assertSee('Montant');
+            $this->withHeaders($headers)->actingAs($user)->get('/admin/fee-structures')
+                ->assertOk()->assertSee('Grilles tarifaires');
         }
     }
 }

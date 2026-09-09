@@ -68,6 +68,18 @@ class AcademicAuthorizationTest extends TestCase
         $this->get(route('report-cards.pdf', $otherCard))->assertForbidden();
     }
 
+    public function test_director_delete_authorization_is_scoped_to_their_school(): void
+    {
+        $school = School::factory()->create();
+        $otherSchool = School::factory()->create();
+        $director = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
+        $student = Student::factory()->create(['school_id' => $school->id]);
+        $otherStudent = Student::factory()->create(['school_id' => $otherSchool->id]);
+
+        $this->assertTrue($director->can('delete', $student));
+        $this->assertFalse($director->can('delete', $otherStudent));
+    }
+
     private function academicFixture(): array
     {
         $school = School::factory()->create();

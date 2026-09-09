@@ -21,10 +21,33 @@
             <select name="school_id" class="rounded-xl border p-3"><option value="">École (obligatoire hors directeur)</option>@foreach (\App\Models\School::query()->where('active', true)->orderBy('name')->get() as $school)<option value="{{ $school->id }}" @selected(old('school_id') == $school->id)>{{ $school->name }}</option>@endforeach</select>
             <input name="school_name" value="{{ old('school_name') }}" placeholder="Nom de l'école (obligatoire pour un directeur)" class="rounded-xl border p-3">
             <input name="school_code" value="{{ old('school_code') }}" placeholder="Code école (optionnel)" class="rounded-xl border p-3">
-            <input type="password" name="password" placeholder="Mot de passe fort" required class="rounded-xl border p-3">
+            <label class="grid gap-1 text-sm font-medium">Mot de passe
+                <input id="password" type="password" name="password" placeholder="Mot de passe fort" required class="rounded-xl border p-3">
+            </label>
+            <ul id="password-rules" class="text-xs text-slate-600">
+                <li data-rule="length">12 caractères minimum</li>
+                <li data-rule="case">Une majuscule et une minuscule</li>
+                <li data-rule="number">Un chiffre</li>
+                <li data-rule="symbol">Un symbole</li>
+            </ul>
             <input type="password" name="password_confirmation" placeholder="Confirmer le mot de passe" required class="rounded-xl border p-3">
             <button class="rounded-xl bg-scolaris-primary p-3 font-bold text-white">Envoyer la demande</button>
         </form>
+        <script>
+            const password = document.querySelector('#password');
+            password.addEventListener('input', () => {
+                const value = password.value;
+                const checks = {
+                    length: value.length >= 12,
+                    case: /[a-z]/.test(value) && /[A-Z]/.test(value),
+                    number: /\d/.test(value),
+                    symbol: /[^A-Za-z0-9]/.test(value),
+                };
+                Object.entries(checks).forEach(([name, valid]) => {
+                    document.querySelector(`[data-rule="${name}"]`).className = valid ? 'text-emerald-700' : 'text-slate-600';
+                });
+            });
+        </script>
         <a class="mt-4 inline-block text-sm text-scolaris-primary" href="{{ url('/admin/login') }}">Retour à la connexion</a>
     </section>
 </main>

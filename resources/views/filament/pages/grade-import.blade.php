@@ -3,6 +3,18 @@
         <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 sm:p-6">
             <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">Le fichier est validé avant insertion. Une ligne invalide est ignorée et détaillée ci-dessous.</p>
             {{ $this->form }}
+            @if ($preview)
+                <div class="mt-5 rounded-xl border border-primary-200 bg-primary-50 p-4 text-sm dark:bg-primary-950/30">
+                    <strong>Prévisualisation</strong>
+                    <p class="mt-1">{{ $preview['analyzed'] }} ligne(s), {{ $preview['valid'] }} valide(s), {{ $preview['invalid'] }} invalide(s).</p>
+                    <p class="mt-1">Colonnes reconnues : {{ implode(', ', $preview['headers']) ?: 'aucune' }}</p>
+                    @if ($preview['unknown']) <p class="mt-1 text-warning-700">Colonnes inconnues : {{ implode(', ', $preview['unknown']) }}</p> @endif
+                    @if ($preview['missing']) <p class="mt-1 text-danger-700">Colonnes manquantes : {{ implode(', ', $preview['missing']) }}</p> @endif
+                    @foreach (array_slice($preview['errors'], 0, 10) as $error)
+                        <div class="mt-1">Ligne {{ $error['line'] }} : {{ $error['message'] }}</div>
+                    @endforeach
+                </div>
+            @endif
         </div>
         @if ($result)
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-6">
