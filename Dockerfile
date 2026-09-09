@@ -32,7 +32,6 @@ COPY --from=frontend /app/public/build ./public/build
 COPY docker/entrypoint.sh /usr/local/bin/scolaris-entrypoint
 COPY docker/start-worker.sh /usr/local/bin/start-worker.sh
 COPY docker/run-scheduler.sh /usr/local/bin/run-scheduler.sh
-COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 RUN chmod +x /usr/local/bin/scolaris-entrypoint /usr/local/bin/start-worker.sh /usr/local/bin/run-scheduler.sh \
     && chown -R www-data:www-data storage bootstrap/cache
 
