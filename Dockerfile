@@ -7,8 +7,13 @@ COPY public public
 COPY vite.config.js ./
 RUN npm run build
 
-FROM composer:2.8 AS vendor
+FROM php:8.2-cli AS vendor
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libicu-dev libzip-dev libonig-dev libpq-dev libxml2-dev unzip \
+    && docker-php-ext-install bcmath dom intl mbstring pdo_pgsql zip \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
