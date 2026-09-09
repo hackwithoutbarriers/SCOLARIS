@@ -14,6 +14,7 @@ Route::get('/health', fn () => response()->json([
 
 Route::view('/', 'welcome');
 Route::redirect('/login', '/admin/login', 302);
+Route::get('/language/{locale}', [\App\Http\Controllers\LocaleController::class, 'update'])->name('locale.update');
 Route::get('/register', [RegistrationRequestController::class, 'create'])->name('registration-requests.create');
 Route::post('/register', [RegistrationRequestController::class, 'store'])->middleware('throttle:5,60')->name('registration-requests.store');
 
