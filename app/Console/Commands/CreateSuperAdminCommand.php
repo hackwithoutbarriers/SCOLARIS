@@ -19,7 +19,11 @@ class CreateSuperAdminCommand extends Command
     public function handle(): int
     {
         $email = strtolower(trim((string) ($this->argument('email') ?: config('scolaris.owner.email'))));
-        $name = trim((string) ($this->option('name') ?: config('scolaris.owner.name') ?: ($this->input->isInteractive() ? $this->ask('Name') : '')));
+        $name = trim((string) ($this->option('name') ?: config('scolaris.owner.name') ?: ''));
+        if ($name === '' && $email === '' && $this->input->isInteractive()) {
+            $name = trim($this->ask('Name'));
+        }
+        $name = $name !== '' ? $name : ucfirst((string) str()->before($email, '@'));
         $password = (string) ($this->option('password') ?: config('scolaris.owner.password') ?: ($this->input->isInteractive() ? $this->secret('Password') : ''));
 
         $validator = Validator::make([
