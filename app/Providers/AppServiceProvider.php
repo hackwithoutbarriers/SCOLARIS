@@ -52,9 +52,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $forwardedProto = strtolower((string) request()->header('x-forwarded-proto'));
-
-        if (app()->environment('production') || request()->isSecure() || $forwardedProto === 'https') {
+        if (app()->environment('production')) {
             URL::forceScheme('https');
         }
 
@@ -68,5 +66,8 @@ class AppServiceProvider extends ServiceProvider
         foreach ([AcademicYear::class, ClassRoom::class, Enrollment::class, Guardian::class, Student::class, Subject::class, Term::class, TeacherAssignment::class, SubjectConfig::class, EvaluationRuleSet::class, Assessment::class, Grade::class, Appreciation::class, ReportCardTemplate::class, ReportCard::class, ReportCardVersion::class, \App\Models\AttendanceSession::class, \App\Models\AttendanceRecord::class] as $model) {
             Gate::policy($model, SchoolResourcePolicy::class);
         }
+        Gate::policy(\App\Models\Student::class, \App\Policies\AcademicPolicy::class);
+        Gate::policy(\App\Models\Assessment::class, \App\Policies\AcademicPolicy::class);
+        Gate::policy(\App\Models\ReportCard::class, \App\Policies\AcademicPolicy::class);
     }
 }

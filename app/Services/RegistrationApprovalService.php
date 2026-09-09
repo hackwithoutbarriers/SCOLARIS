@@ -27,6 +27,9 @@ final class RegistrationApprovalService
 
         return DB::transaction(function () use ($request, $reviewer, $isDirectorRequest): User {
             $school = $request->school;
+            if (!$isDirectorRequest && (!$school || ($request->school_code && strcasecmp($school->code, trim($request->school_code)) !== 0))) {
+                throw ValidationException::withMessages(['school_code' => 'Le code école ne correspond pas à l’école demandée.']);
+            }
             if ($isDirectorRequest && !$school) {
                 $school = School::create([
                     'name' => $request->school_name,
