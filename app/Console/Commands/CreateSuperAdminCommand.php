@@ -1,72 +1,61 @@
 <?php
 
-namespace App\Models;
+namespace App\Console\Commands;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Concerns\BelongsToSchool;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
-class User extends Authenticatable implements FilamentUser
+class CreateSuperAdminCommand extends Command
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, BelongsToSchool;
+    protected $signature = 'scolaris:create-super-admin
+        {email? : Login email; defaults to SCOLARIS_OWNER_EMAIL}
+        {--name= : Display name; defaults to SCOLARIS_OWNER_NAME}
+        {--password= : Password; defaults to SCOLARIS_OWNER_PASSWORD}';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name', 'first_name', 'last_name',
-        'email',
-        'phone',
-        'password',
-        'school_id',
-        'role',
-        'is_active',
-        'email_verified_at',
-    ];
+    protected $description = 'Create or update a Scolaris super administrator';
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function handle(): int
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
-        ];
-    }
+        $email = strtolower(trim((string) ($this->argument('email') ?: getenv('SCOLARIS_OWNER_EMAIL') ?: config('scolaris.owner.email'))));
+        $name = trim((string) ($this->option('name') ?: getenv('SCOLARIS_OWNER_NAME') ?: config('scolaris.owner.name') ?: ''));
+        $name = $name !== '' ? $name : ucfirst((string) str()->before($email, '@'));
+        $password = (string) ($this->option('password') ?: getenv('SCOLARIS_OWNER_PASSWORD') ?: config('scolaris.owner.password'));
 
-    public function teacherAssignments(): HasMany { return $this->hasMany(TeacherAssignment::class, 'teacher_id'); }
-    public function isSuperAdmin(): bool { return $this->role === 'super_admin'; }
-    public function isDirector(): bool { return in_array($this->role, ['director', 'admin', 'principal'], true); }
-    public function isAdmin(): bool { return $this->isSuperAdmin() || $this->isDirector(); }
-    public function isFinanceOperator(): bool { return $this->isSuperAdmin() || $this->isDirector() || $this->role === 'accountant'; }
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->is_active
-            && $this->email_verified_at !== null
-            && ($this->isSuperAdmin() || $this->school_id !== null);
+        $validator = Validator::make([
+            'email' => $email,
+            'name' => $name,
+            'password' => $password,
+        ], [
+            'email' => ['required', 'email', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'min:12'],
+        ]);
+
+        if ($validator->fails()) {
+            foreach ($validator->errors()->all() as $error) {
+                $this->error($error);
+            }
+
+            return self::INVALID;
+        }
+
+        $user = \App\Models\User::withoutGlobalScopes()->updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => $name,
+                'first_name' => $name,
+                'last_name' => null,
+                'school_id' => null,
+                'role' => 'super_admin',
+                'password' => Hash::make($password),
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ],
+        );
+
+        $this->info("Super Admin ready: {$user->email}");
+
+        return self::SUCCESS;
     }
 }
