@@ -15,6 +15,7 @@ class AcademicController extends Controller
 {
     public function grades(Student $student, GradeCalculationService $calculator, ?int $term = null): JsonResponse
     {
+        abort_unless(request()->user()->can('viewGrades', $student), 403);
         return response()->json($calculator->calculate($student, $term ? \App\Models\Term::findOrFail($term) : null));
     }
 
@@ -22,6 +23,7 @@ class AcademicController extends Controller
     {
         $data = $request->validate(['student_id' => ['required', 'integer'], 'score' => ['required', 'numeric'], 'remarks' => ['nullable', 'string']]);
         $student = Student::findOrFail($data['student_id']);
+        abort_unless($request->user()->can('manageGrades', [$assessment, $student]), 403);
         $grade = $calculator->saveGrade($assessment, $student, $data['score'], ['remarks' => $data['remarks'] ?? null]);
         return response()->json($grade->load('assessment', 'student'), 201);
     }
@@ -35,11 +37,13 @@ class AcademicController extends Controller
 
     public function reportCardHtml(ReportCard $reportCard, ReportCardRenderer $renderer): \Illuminate\Http\Response
     {
+        abort_unless(request()->user()->can('viewReportCard', $reportCard), 403);
         return response($renderer->renderHtml($reportCard))->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
     public function reportCardPdf(ReportCard $reportCard, ReportCardRenderer $renderer): mixed
     {
+        abort_unless(request()->user()->can('viewReportCard', $reportCard), 403);
         return $renderer->pdf($reportCard)->download('report-card-'.$reportCard->id.'.pdf');
     }
 }

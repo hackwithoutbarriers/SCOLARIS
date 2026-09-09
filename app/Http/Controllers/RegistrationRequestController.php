@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Models\School;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -33,6 +34,11 @@ class RegistrationRequestController extends Controller
             'school_code' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
         ]);
+
+        if (($data['requested_role'] ?? null) !== 'director' && !empty($data['school_code'])) {
+            $school = School::query()->findOrFail($data['school_id']);
+            abort_unless(strcasecmp($school->code, trim($data['school_code'])) === 0, 422, 'Le code école ne correspond pas à l’école sélectionnée.');
+        }
 
         $duplicate = RegistrationRequest::query()
             ->where('email', strtolower($data['email']))

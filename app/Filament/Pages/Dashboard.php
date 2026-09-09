@@ -11,6 +11,13 @@ class Dashboard extends BaseDashboard
 {
     use \Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
+    public function mount(): void
+    {
+        if (auth()->user()?->role === 'teacher') {
+            $this->redirect('/teacher/attendance');
+        }
+    }
+
     public function filtersForm(Form $form): Form
     {
         return $form->schema([
