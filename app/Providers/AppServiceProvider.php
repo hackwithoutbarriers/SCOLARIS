@@ -24,6 +24,7 @@ use App\Services\{HttpNotificationProvider, MockNotificationProvider, Notificati
 use App\Services\Payments\{FakePaymentGateway, ManualPaymentGateway, PaymentGatewayInterface};
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,6 +52,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         if (config('database.default') === 'pgsql' && env('DB_NEON_POOLER', false)) {
             $connection = DB::connection('pgsql');
             $connection->setSchemaGrammar(new \App\Database\Schema\Grammars\NeonPostgresGrammar($connection));
