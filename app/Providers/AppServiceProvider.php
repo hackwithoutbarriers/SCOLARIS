@@ -63,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::before(fn ($user) => $user->isSuperAdmin() ? true : null);
         Gate::policy(\App\Models\Payment::class, \App\Policies\PaymentPolicy::class);
+        Gate::policy(\App\Models\School::class, \App\Policies\SchoolPolicy::class);
         foreach ([AcademicYear::class, ClassRoom::class, Enrollment::class, Guardian::class, Student::class, Subject::class, Term::class, TeacherAssignment::class, SubjectConfig::class, EvaluationRuleSet::class, Assessment::class, Grade::class, Appreciation::class, ReportCardTemplate::class, ReportCard::class, ReportCardVersion::class, \App\Models\AttendanceSession::class, \App\Models\AttendanceRecord::class] as $model) {
             Gate::policy($model, SchoolResourcePolicy::class);
         }
