@@ -1,5 +1,11 @@
 <?php
+
 namespace App\Filament\Resources\GuardianResource\Pages;
+
 use App\Filament\Resources\GuardianResource;
 use Filament\Resources\Pages\CreateRecord;
-class CreateGuardian extends CreateRecord { protected static string $resource = GuardianResource::class; }
+
+class CreateGuardian extends CreateRecord
+{
+    protected static string $resource = GuardianResource::class;
+}

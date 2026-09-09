@@ -13,8 +13,10 @@ use Filament\Tables\Table;
 class AcademicYearResource extends Resource
 {
     protected static ?string $model = AcademicYear::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationGroup = 'Academic Setup';
+
+    protected static ?string $navigationGroup = 'Paramétrage scolaire';
 
     public static function form(Form $form): Form
     {
@@ -25,6 +27,7 @@ class AcademicYearResource extends Resource
             Forms\Components\Toggle::make('is_current'),
         ]);
     }
+
     public static function table(Table $table): Table
     {
         return $table->columns([
@@ -34,6 +37,7 @@ class AcademicYearResource extends Resource
             Tables\Columns\IconColumn::make('is_current')->boolean(),
         ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
+
     public static function getPages(): array
     {
         return ['index' => Pages\ListAcademicYears::route('/'), 'create' => Pages\CreateAcademicYear::route('/create'), 'edit' => Pages\EditAcademicYear::route('/{record}/edit')];

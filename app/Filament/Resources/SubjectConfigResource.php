@@ -13,7 +13,9 @@ use Filament\Tables\Table;
 class SubjectConfigResource extends Resource
 {
     protected static ?string $model = SubjectConfig::class;
+
     protected static ?string $navigationGroup = 'Academic Setup';
+
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
     public static function form(Form $form): Form
@@ -26,7 +28,7 @@ class SubjectConfigResource extends Resource
             Forms\Components\TextInput::make('passing_score')->numeric()->minValue(0)->maxValue(100)->required(),
             Forms\Components\TextInput::make('max_score')->numeric()->minValue(0.01)->required(),
             Forms\Components\TextInput::make('weight')->numeric()->minValue(0)->required(),
-            Forms\Components\KeyValue::make('rules')->label('Rules (JSON)'),
+            Forms\Components\KeyValue::make('rules')->label('Règles (JSON)'),
             Forms\Components\Toggle::make('active')->default(true),
         ]);
     }

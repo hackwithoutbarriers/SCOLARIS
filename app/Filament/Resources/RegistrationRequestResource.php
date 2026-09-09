@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\RegistrationRequestResource\Pages;
 use App\Models\RegistrationRequest;
 use App\Services\RegistrationApprovalService;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,8 +14,11 @@ use Illuminate\Database\Eloquent\Builder;
 class RegistrationRequestResource extends Resource
 {
     protected static ?string $model = RegistrationRequest::class;
+
     protected static ?string $navigationGroup = 'Administration';
+
     protected static ?string $navigationLabel = 'Demandes d’accès';
+
     protected static ?string $modelLabel = 'Demande d’accès';
 
     public static function canAccess(): bool
@@ -25,8 +29,9 @@ class RegistrationRequestResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
+
         return parent::getEloquentQuery()
-            ->when($user && !$user->isSuperAdmin(), fn (Builder $query) => $query->where('school_id', $user->school_id))
+            ->when($user && ! $user->isSuperAdmin(), fn (Builder $query) => $query->where('school_id', $user->school_id))
             ->latest();
     }
 
@@ -46,7 +51,7 @@ class RegistrationRequestResource extends Resource
                 ->action(fn (RegistrationRequest $record) => app(RegistrationApprovalService::class)->approve($record, auth()->user())),
             Tables\Actions\Action::make('reject')
                 ->label('Refuser')->color('danger')->requiresConfirmation()
-                ->form([ \Filament\Forms\Components\Textarea::make('reason')->required()->maxLength(1000) ])
+                ->form([Textarea::make('reason')->required()->maxLength(1000)])
                 ->visible(fn (RegistrationRequest $record): bool => $record->status === RegistrationRequest::PENDING)
                 ->action(fn (RegistrationRequest $record, array $data) => app(RegistrationApprovalService::class)->reject($record, auth()->user(), $data['reason'])),
         ])->defaultSort('created_at', 'desc');

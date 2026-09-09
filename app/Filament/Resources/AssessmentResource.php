@@ -13,8 +13,11 @@ use Filament\Tables\Table;
 class AssessmentResource extends Resource
 {
     protected static ?string $model = Assessment::class;
+
     protected static ?string $navigationGroup = 'Academic';
+
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -28,9 +31,14 @@ class AssessmentResource extends Resource
             Forms\Components\Select::make('status')->options(['draft' => 'Draft', 'published' => 'Published'])->required(),
         ]);
     }
+
     public static function table(Table $table): Table
     {
         return $table->columns([Tables\Columns\TextColumn::make('title')->searchable(), Tables\Columns\TextColumn::make('subjectConfig.subject.name'), Tables\Columns\TextColumn::make('term.name'), Tables\Columns\TextColumn::make('status')->badge(), Tables\Columns\TextColumn::make('assessment_date')->date()])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
-    public static function getPages(): array { return ['index' => Pages\ListAssessments::route('/'), 'create' => Pages\CreateAssessment::route('/create'), 'edit' => Pages\EditAssessment::route('/{record}/edit')]; }
+
+    public static function getPages(): array
+    {
+        return ['index' => Pages\ListAssessments::route('/'), 'create' => Pages\CreateAssessment::route('/create'), 'edit' => Pages\EditAssessment::route('/{record}/edit')];
+    }
 }

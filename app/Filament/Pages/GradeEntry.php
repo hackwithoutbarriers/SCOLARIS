@@ -4,7 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Assessment;
 use App\Models\Enrollment;
-use App\Models\Grade;
+use App\Models\Student;
 use App\Services\GradeCalculationService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -13,19 +13,26 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 
 class GradeEntry extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static ?string $navigationGroup = 'Academic';
+
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+
     protected static ?string $title = 'Saisie rapide des notes';
+
     protected static string $view = 'filament.pages.grade-entry';
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isDirector() || auth()->user()?->role === 'teacher';
+    }
 
     public ?array $data = [];
 
@@ -91,7 +98,8 @@ class GradeEntry extends Page implements HasForms
             if ($row['score'] === null || $row['score'] === '') {
                 continue;
             }
-            $student = \App\Models\Student::query()->findOrFail($row['student_id']);
+            $student = Student::query()->findOrFail($row['student_id']);
+            abort_unless(auth()->user()->can('manageGrades', [$assessment, $student]), 403);
             $calculator->saveGrade($assessment, $student, $row['score']);
             $saved++;
         }

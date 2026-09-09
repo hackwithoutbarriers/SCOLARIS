@@ -2,20 +2,25 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\AcademicOverview;
+use App\Filament\Widgets\AttendanceOverview;
+use App\Filament\Widgets\FinanceOverview;
+use App\Filament\Widgets\RoleActionCenter;
+use App\Filament\Widgets\SchoolStatsOverview;
+use App\Models\ClassRoom;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 
 class Dashboard extends BaseDashboard
 {
-    use \Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+    use HasFiltersForm;
 
     public function mount(): void
     {
-        if (auth()->user()?->role === 'teacher') {
-            $this->redirect('/teacher/attendance');
-        }
+        // Le tableau de bord reste le point d’entrée commun ; les cartes orientent vers l’action.
     }
 
     public function filtersForm(Form $form): Form
@@ -24,7 +29,7 @@ class Dashboard extends BaseDashboard
             DatePicker::make('date')->label('Date')->default(now()->toDateString()),
             Select::make('class_room_id')
                 ->label('Classe')
-                ->options(fn () => \App\Models\ClassRoom::query()->orderBy('name')->pluck('name', 'id'))
+                ->options(fn () => ClassRoom::query()->orderBy('name')->pluck('name', 'id'))
                 ->searchable()
                 ->native(false),
         ])->columns(2);
@@ -32,10 +37,14 @@ class Dashboard extends BaseDashboard
 
     public function getWidgets(): array
     {
-        $widgets = [\App\Filament\Widgets\SchoolStatsOverview::class, \App\Filament\Widgets\AcademicOverview::class];
+        $widgets = [RoleActionCenter::class, SchoolStatsOverview::class, AcademicOverview::class];
 
         if (auth()->user()?->isAdmin()) {
-            $widgets[] = \App\Filament\Widgets\AttendanceOverview::class;
+            $widgets[] = AttendanceOverview::class;
+        }
+
+        if (auth()->user()?->isFinanceOperator()) {
+            $widgets[] = FinanceOverview::class;
         }
 
         return $widgets;

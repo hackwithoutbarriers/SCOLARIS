@@ -15,10 +15,10 @@ class SchoolStatsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Students', Student::count())->icon('heroicon-o-academic-cap'),
-            Stat::make('Guardians', Guardian::count())->icon('heroicon-o-users'),
-            Stat::make('Classrooms', ClassRoom::count())->icon('heroicon-o-building-office-2'),
-            Stat::make('Current academic years', AcademicYear::where('is_current', true)->count())->icon('heroicon-o-calendar-days'),
+            Stat::make('Élèves', Student::count())->icon('heroicon-o-academic-cap'),
+            Stat::make('Responsables', Guardian::count())->icon('heroicon-o-users'),
+            Stat::make('Classes', ClassRoom::count())->icon('heroicon-o-building-office-2'),
+            Stat::make('Années scolaires en cours', AcademicYear::where('is_current', true)->count())->icon('heroicon-o-calendar-days'),
             Stat::make('Enseignants', User::where('role', 'teacher')->count())->icon('heroicon-o-user-group'),
         ];
     }

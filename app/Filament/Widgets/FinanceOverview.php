@@ -19,6 +19,7 @@ class FinanceOverview extends BaseWidget
         $expected = (int) Invoice::query()->whereNotIn('status', [Invoice::CANCELLED])->sum('total_amount');
         $collected = (int) Payment::query()->where('status', Payment::CONFIRMED)->sum('amount');
         $outstanding = max(0, $expected - $collected);
+
         return [
             Stat::make('Scolarité attendue', number_format($expected, 0, ',', ' ').' FCFA')->color('primary'),
             Stat::make('Encaissé', number_format($collected, 0, ',', ' ').' FCFA')->color('success'),
