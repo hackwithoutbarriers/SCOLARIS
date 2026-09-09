@@ -12,7 +12,6 @@ Route::redirect('/login', '/admin/login', 302);
 Route::get('/register', [\App\Http\Controllers\RegistrationRequestController::class, 'create'])->name('registration-requests.create');
 Route::post('/register', [\App\Http\Controllers\RegistrationRequestController::class, 'store'])->middleware('throttle:5,60')->name('registration-requests.store');
 
-Route::view('/', 'welcome');
 Route::middleware('auth')->get('/teacher/attendance', fn () => view('teacher.attendance'));
 
 Route::middleware(['auth', 'throttle:120,1'])->prefix('api')->group(function () {
