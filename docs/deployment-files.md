@@ -61,6 +61,9 @@ optimise Laravel et démarre le processus demandé par Render.
 - `docs/responsive-validation.md`
 - `docs/examples/`
 
+The administrative bootstrap command is included in
+`app/Console/Commands/CreateSuperAdminCommand.php`.
+
 Les autres documents présents sous `docs/` peuvent également être publiés; ils
 ne sont pas requis par le runtime.
 
@@ -84,6 +87,11 @@ ne sont pas requis par le runtime.
 `APP_ENV=production`, `APP_DEBUG=false`, `APP_NAME=Scolaris`,
 `SESSION_DRIVER=database`, `CACHE_STORE=database` et
 `QUEUE_CONNECTION=database`.
+
+Pour le SaaS owner, définir `SCOLARIS_OWNER_EMAIL` et
+`SCOLARIS_OWNER_PASSWORD` comme variables Render secrètes. `SCOLARIS_OWNER_NAME`
+est optionnelle; à défaut, le nom est dérivé de l'adresse email. L'entrypoint crée ce compte automatiquement. Ne jamais placer ces
+valeurs dans `.env.example` avec des valeurs réelles.
 
 Pour `FILESYSTEM_DISK=s3`, ajouter les variables `AWS_*` et vérifier le bucket
 avant toute mise en production de fichiers ou de PDF persistants.

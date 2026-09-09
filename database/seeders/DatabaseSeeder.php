@@ -25,15 +25,15 @@ class DatabaseSeeder extends Seeder
         );
         $admin = User::updateOrCreate(['email' => 'admin@example.com'], [
             'name' => 'Super Admin', 'first_name' => 'Super', 'last_name' => 'Admin', 'school_id' => null, 'role' => 'super_admin',
-            'password' => Hash::make('password'), 'is_active' => true,
+            'password' => Hash::make('password'), 'is_active' => true, 'email_verified_at' => now(),
         ]);
         User::updateOrCreate(['email' => 'director@example.com'], [
             'name' => 'Demo Director', 'first_name' => 'Demo', 'last_name' => 'Director',
-            'school_id' => $school->id, 'role' => 'director', 'password' => Hash::make('password'), 'is_active' => true,
+            'school_id' => $school->id, 'role' => 'director', 'password' => Hash::make('password'), 'is_active' => true, 'email_verified_at' => now(),
         ]);
         $teacher = User::updateOrCreate(['email' => 'teacher@example.com'], [
             'name' => 'Demo Teacher', 'first_name' => 'Demo', 'last_name' => 'Teacher', 'school_id' => $school->id, 'role' => 'teacher',
-            'password' => Hash::make('password'), 'is_active' => true,
+            'password' => Hash::make('password'), 'is_active' => true, 'email_verified_at' => now(),
         ]);
         $class = ClassRoom::withoutGlobalScopes()->firstOrCreate(['school_id' => $school->id, 'academic_year_id' => $year->id, 'name' => 'Grade 1A'], ['grade_level' => 'Grade 1', 'capacity' => 30]);
         $subject = Subject::withoutGlobalScopes()->firstOrCreate(['school_id' => $school->id, 'name' => 'Mathematics'], ['code' => 'MATH']);
