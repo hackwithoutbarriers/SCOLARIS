@@ -62,5 +62,10 @@ class User extends Authenticatable implements FilamentUser
     public function isDirector(): bool { return in_array($this->role, ['director', 'admin', 'principal'], true); }
     public function isAdmin(): bool { return $this->isSuperAdmin() || $this->isDirector(); }
     public function isFinanceOperator(): bool { return $this->isSuperAdmin() || $this->isDirector() || $this->role === 'accountant'; }
-    public function canAccessPanel(Panel $panel): bool { return $this->is_active && ($this->isSuperAdmin() || $this->school_id !== null); }
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->is_active
+            && $this->email_verified_at !== null
+            && ($this->isSuperAdmin() || $this->school_id !== null);
+    }
 }
