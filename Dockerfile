@@ -29,7 +29,9 @@ RUN apt-get update \
 COPY --from=vendor /app/vendor ./vendor
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
-COPY docker/entrypoint.sh docker/start-worker.sh docker/run-scheduler.sh /usr/local/bin/
+COPY docker/entrypoint.sh /usr/local/bin/scolaris-entrypoint
+COPY docker/start-worker.sh /usr/local/bin/start-worker.sh
+COPY docker/run-scheduler.sh /usr/local/bin/run-scheduler.sh
 RUN chmod +x /usr/local/bin/scolaris-entrypoint /usr/local/bin/start-worker.sh /usr/local/bin/run-scheduler.sh \
     && chown -R www-data:www-data storage bootstrap/cache
 
