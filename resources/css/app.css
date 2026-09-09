@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-scolaris-primary: #1E3A8A;
+    --color-scolaris-success: #10B981;
+    --color-scolaris-warning: #F59E0B;
+    --color-scolaris-background: #F8FAFC;
+    --color-scolaris-text: #0F172A;
+}
+
+body { font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif; background: #F8FAFC; color: #0F172A; }
