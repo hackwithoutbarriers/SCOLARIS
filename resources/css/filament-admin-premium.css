@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+
+/* Visual layer only: Filament's own CSS remains responsible for layout and breakpoints. */
+.fi-body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    background: #f4f7fb;
+    color: #152238;
+}
+
+.fi-body h1,
+.fi-body h2,
+.fi-body h3,
+.fi-body h4 {
+    font-family: 'Manrope', 'DM Sans', sans-serif;
+    letter-spacing: -0.025em;
+}
+
+.fi-sidebar {
+    background: linear-gradient(180deg, #173b67 0%, #102d50 100%);
+    border-inline-end-color: rgba(255, 255, 255, .12);
+}
+
+.fi-sidebar-header,
+.fi-sidebar-nav {
+    background: transparent;
+}
+
+.fi-sidebar-item {
+    border-radius: .8rem;
+    margin-inline: .5rem;
+}
+
+.fi-sidebar-item:hover,
+.fi-sidebar-item.fi-active {
+    background: rgba(255, 255, 255, .12);
+}
+
+.fi-topbar {
+    background: rgba(255, 255, 255, .88);
+    border-bottom-color: rgba(23, 59, 103, .08);
+    backdrop-filter: blur(16px);
+}
+
+.fi-main {
+    background:
+        radial-gradient(circle at 100% 0, rgba(214, 168, 79, .12), transparent 24rem),
+        #f4f7fb;
+}
+
+.fi-section,
+.fi-wi-widget,
+.fi-ta-ctn,
+.fi-fo-component-ctn {
+    border-color: rgba(23, 59, 103, .09);
+    box-shadow: 0 12px 36px rgba(23, 59, 103, .06);
+}
+
+.fi-btn.fi-color-primary {
+    box-shadow: 0 8px 18px rgba(23, 59, 103, .16);
+}
+
+.fi-btn.fi-color-primary:hover {
+    transform: translateY(-1px);
+}
+
+.fi-simple-layout {
+    background:
+        radial-gradient(circle at 10% 0, rgba(214, 168, 79, .16), transparent 24rem),
+        linear-gradient(135deg, #f7fafd 0%, #eef4fa 100%);
+}
+
+.fi-simple-main {
+    border-color: rgba(23, 59, 103, .09);
+    box-shadow: 0 24px 70px rgba(23, 59, 103, .12);
+}
+
+@media (max-width: 767px) {
+    .fi-main {
+        background: #f4f7fb;
+    }
+
+    .fi-simple-main {
+        box-shadow: 0 14px 36px rgba(23, 59, 103, .1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-body *,
+    .fi-body *::before,
+    .fi-body *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
+}
