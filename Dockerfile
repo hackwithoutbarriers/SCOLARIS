@@ -39,12 +39,14 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 COPY . .
 
-RUN composer install \
+RUN rm -f bootstrap/cache/*.php \
+    && composer install \
         --no-dev \
         --no-interaction \
         --prefer-dist \
         --optimize-autoloader \
         --no-scripts \
+    && php artisan package:discover --ansi \
     && composer clear-cache
 
 COPY --from=frontend /app/public/build ./public/build
