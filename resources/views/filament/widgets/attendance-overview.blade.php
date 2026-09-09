@@ -1,7 +1,7 @@
 <div class="fi-section rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
         <div class="mb-4 flex flex-wrap items-end gap-3">
             <label class="text-sm">
-                <span class="mb-1 block font-medium">Date</span>
+                <span class="mb-1 block font-medium">Date de présence</span>
                 <input type="date" wire:model.live="date" class="fi-input rounded-lg border-gray-300">
             </label>
             <label class="text-sm">

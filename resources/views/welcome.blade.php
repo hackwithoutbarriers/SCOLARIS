@@ -6,34 +6,45 @@
     <title>Scolaris — Gestion scolaire</title>
     @vite(['resources/css/app.css'])
 </head>
-<body class="min-h-screen bg-scolaris-background font-sans text-scolaris-text">
-    <main class="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-10">
-        <section class="grid w-full gap-8 overflow-hidden rounded-xl bg-white p-6 shadow-sm md:grid-cols-2 md:p-12">
-            <div class="flex flex-col justify-center">
-                <p class="text-sm font-bold uppercase tracking-[0.2em] text-scolaris-primary">SCOLARIS</p>
-                <h1 class="mt-4 text-4xl font-black tracking-tight text-scolaris-primary md:text-5xl">La gestion scolaire, simplement.</h1>
-                <p class="mt-5 max-w-xl text-lg text-slate-600">Un espace de travail sécurisé pour piloter les élèves, les présences, les notes, les bulletins et le recouvrement au même endroit.</p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ url('/login') }}" class="rounded-xl bg-scolaris-primary px-6 py-3 text-center font-bold text-white hover:opacity-90">Se connecter</a>
-                    <a href="{{ route('registration-requests.create') }}" class="rounded-xl border border-scolaris-primary px-6 py-3 text-center font-bold text-scolaris-primary hover:bg-slate-50">Demander un accès</a>
+<body class="premium-shell min-h-screen font-sans text-scolaris-text">
+    <main class="mx-auto min-h-screen max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between text-sm text-slate-600">
+            <a href="/" class="font-extrabold tracking-[0.22em] text-scolaris-primary">SCOLARIS</a>
+            <div class="rounded-full border border-slate-200 bg-white/75 px-3 py-2 shadow-sm backdrop-blur">
+            <span class="font-medium">Langue :</span> <a href="{{ url('/language/fr') }}" class="font-bold text-scolaris-primary">Français</a>
+            <span class="ml-2 text-slate-400" title="La traduction anglaise sera activée ultérieurement">Anglais (bientôt disponible)</span>
+            </div>
+        </div>
+        <section class="fade-up mt-8 grid overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_30px_90px_rgba(23,59,103,.14)] backdrop-blur-xl md:grid-cols-[1.1fr_.9fr]">
+            <div class="relative overflow-hidden p-8 sm:p-12 lg:p-16">
+                <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-scolaris-accent/20 blur-3xl"></div>
+                <div class="relative">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-scolaris-accent/30 bg-scolaris-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-scolaris-primary">Pilotage scolaire</span>
+                    <h1 class="mt-7 max-w-2xl text-4xl font-extrabold leading-tight text-scolaris-primary sm:text-5xl lg:text-6xl">L’excellence scolaire, avec une vision claire.</h1>
+                    <p class="mt-6 max-w-xl text-lg leading-8 text-slate-600">Un espace de travail sécurisé pour décider plus vite, accompagner chaque élève et garder toute votre équipe alignée.</p>
+                    <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <a href="{{ url('/login') }}" class="premium-button rounded-xl bg-scolaris-primary px-6 py-3.5 text-center font-bold text-white hover:bg-[#102d50]">Se connecter <span aria-hidden="true">→</span></a>
+                        <a href="{{ route('registration-requests.create') }}" class="rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-center font-bold text-scolaris-primary hover:border-scolaris-primary hover:bg-scolaris-primary-light">Demander un accès</a>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center rounded-xl bg-slate-50 p-6 md:p-8">
-                <div>
-                    <h2 class="text-xl font-bold">Les décisions au bon moment</h2>
-                    <ul class="mt-5 space-y-4 text-slate-600">
-                        <li><strong class="text-scolaris-primary">Directeur</strong> : voyez les absences, notes, bulletins et impayés à traiter.</li>
-                        <li><strong class="text-scolaris-primary">Enseignant</strong> : prenez l’appel sur mobile et complétez vos évaluations.</li>
-                        <li><strong class="text-scolaris-primary">Comptable</strong> : suivez les paiements, les soldes et les relances.</li>
-                        <li><strong class="text-scolaris-primary">Démarrage guidé</strong> : configurez votre école étape par étape.</li>
-                    </ul>
+            <div class="relative flex items-center bg-scolaris-primary p-8 text-white sm:p-12">
+                <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 18px 18px;"></div>
+                <div class="relative w-full">
+                    <p class="text-sm font-bold uppercase tracking-[0.18em] text-scolaris-accent">Une même exigence</p>
+                    <h2 class="mt-3 text-2xl font-extrabold sm:text-3xl">Les décisions au bon moment.</h2>
+                    <div class="mt-8 space-y-3">
+                        @foreach (['Directeur' => 'Une vue claire des priorités de l’établissement.', 'Enseignant' => 'Des parcours rapides pour les classes et les évaluations.', 'Comptable' => 'Un suivi précis des paiements et du recouvrement.'] as $role => $benefit)
+                            <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><strong class="block text-scolaris-accent">{{ $role }}</strong><span class="mt-1 block text-sm leading-6 text-white/75">{{ $benefit }}</span></div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </section>
         <section class="mt-8 grid gap-4 md:grid-cols-3">
-            <article class="rounded-xl bg-white p-5 shadow-sm"><h2 class="font-bold text-scolaris-primary">1. Configurez</h2><p class="mt-2 text-sm text-slate-600">École, année, classes, utilisateurs puis élèves.</p></article>
-            <article class="rounded-xl bg-white p-5 shadow-sm"><h2 class="font-bold text-scolaris-primary">2. Travaillez</h2><p class="mt-2 text-sm text-slate-600">Chaque rôle retrouve directement ses actions prioritaires.</p></article>
-            <article class="rounded-xl bg-white p-5 shadow-sm"><h2 class="font-bold text-scolaris-primary">3. Suivez</h2><p class="mt-2 text-sm text-slate-600">Présences, résultats, bulletins et recouvrement restent traçables.</p></article>
+            @foreach ([['01', 'Configurez', 'Démarrage guidé : école, année, classes, utilisateurs puis élèves.'], ['02', 'Travaillez', 'Chaque rôle retrouve directement ses actions prioritaires.'], ['03', 'Suivez', 'Présences, résultats, bulletins et recouvrement restent traçables.']] as $item)
+                <article class="premium-card fade-up rounded-2xl bg-white/85 p-6" style="animation-delay: {{ $loop->index * 100 }}ms"><span class="text-sm font-extrabold text-scolaris-accent">{{ $item[0] }}</span><h2 class="mt-3 text-xl font-extrabold text-scolaris-primary">{{ $item[1] }}</h2><p class="mt-2 leading-7 text-slate-600">{{ $item[2] }}</p></article>
+            @endforeach
         </section>
     </main>
 </body>

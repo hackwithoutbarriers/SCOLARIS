@@ -5,11 +5,15 @@
     <title>Demander un accès — Scolaris</title>
     @vite(['resources/css/app.css'])
 </head>
-<body class="min-h-screen bg-scolaris-background font-sans text-scolaris-text">
-<main class="mx-auto max-w-xl px-4 py-8">
-    <section class="rounded-xl bg-white p-6 shadow-sm">
-        <h1 class="text-2xl font-bold text-scolaris-primary">Demander un accès Scolaris</h1>
-        <p class="mt-2 text-sm text-slate-600">Les directeurs sont validés par le SaaS owner. Les autres rôles sont validés par le directeur de leur école.</p>
+<body class="premium-shell min-h-screen font-sans text-scolaris-text">
+<main class="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+    <div class="mb-4 text-right text-sm">
+        <span class="font-medium">Langue :</span> <a href="{{ url('/language/fr') }}" class="font-bold text-scolaris-primary">Français</a>
+        <span class="ml-2 text-slate-400">Anglais (bientôt disponible)</span>
+    </div>
+    <section class="premium-card rounded-[1.75rem] bg-white/90 p-6 backdrop-blur sm:p-10">
+    <div class="mb-8"><span class="text-xs font-extrabold uppercase tracking-[0.2em] text-scolaris-accent">SCOLARIS</span><h1 class="mt-3 text-3xl font-extrabold text-scolaris-primary">Demander un accès</h1></div>
+        <p class="mt-2 text-sm text-slate-600">Les directeurs sont validés par l’administrateur de la plateforme. Les autres rôles sont validés par le directeur de leur école.</p>
         @if (session('status')) <div class="mt-4 rounded-xl bg-emerald-50 p-3 text-emerald-800">{{ session('status') }}</div> @endif
         @if ($errors->any()) <div class="mt-4 rounded-xl bg-red-50 p-3 text-red-800"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
         <form method="POST" action="{{ route('registration-requests.store') }}" class="mt-6 grid gap-4">
@@ -31,7 +35,7 @@
                 <li data-rule="symbol">Un symbole</li>
             </ul>
             <input type="password" name="password_confirmation" placeholder="Confirmer le mot de passe" required class="rounded-xl border p-3">
-            <button class="rounded-xl bg-scolaris-primary p-3 font-bold text-white">Envoyer la demande</button>
+            <button class="premium-button rounded-xl bg-scolaris-primary p-3.5 font-bold text-white hover:bg-[#102d50]">Envoyer la demande <span aria-hidden="true">→</span></button>
         </form>
         <script>
             const password = document.querySelector('#password');
