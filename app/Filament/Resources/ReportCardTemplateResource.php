@@ -15,7 +15,7 @@ class ReportCardTemplateResource extends Resource
 {
     protected static ?string $model = ReportCardTemplate::class;
 
-    protected static ?string $navigationGroup = 'Academic';
+    protected static ?string $navigationGroup = 'Scolarité';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
 
@@ -24,9 +24,9 @@ class ReportCardTemplateResource extends Resource
         return $form->schema([
             Forms\Components\TextInput::make('name')->required(),
             Forms\Components\TextInput::make('version')->numeric()->minValue(1)->default(1)->required(),
-            Forms\Components\Select::make('status')->options(['DRAFT' => 'Draft', 'ACTIVE' => 'Active', 'ARCHIVED' => 'Archived'])->default('DRAFT')->required(),
+            Forms\Components\Select::make('status')->label('Statut')->options(['DRAFT' => 'Brouillon', 'ACTIVE' => 'Actif', 'ARCHIVED' => 'Archivé'])->default('DRAFT')->required(),
             Forms\Components\Select::make('orientation')->options(['portrait' => 'Portrait', 'landscape' => 'Landscape'])->default('portrait')->required(),
-            Forms\Components\Textarea::make('schema')->label('Template configuration (JSON)')->required()
+            Forms\Components\Textarea::make('schema')->label('Configuration du modèle (JSON)')->required()
                 ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : ($state ?: json_encode(ReportCardTemplate::defaultSchema(), JSON_PRETTY_PRINT)))
                 ->dehydrateStateUsing(function ($state) {
                     $decoded = json_decode((string) $state, true);

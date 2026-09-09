@@ -14,7 +14,7 @@ class SubjectConfigResource extends Resource
 {
     protected static ?string $model = SubjectConfig::class;
 
-    protected static ?string $navigationGroup = 'Academic Setup';
+    protected static ?string $navigationGroup = 'Paramétrage scolaire';
 
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 

@@ -25,7 +25,7 @@ class EnrollmentResource extends Resource
             Forms\Components\Select::make('academic_year_id')->relationship('academicYear', 'name')->required(),
             Forms\Components\Select::make('class_room_id')->relationship('classRoom', 'name')->required(),
             Forms\Components\DatePicker::make('enrolled_at')->default(now())->required(),
-            Forms\Components\Select::make('status')->options(['active' => 'Active', 'withdrawn' => 'Withdrawn'])->default('active')->required(),
+            Forms\Components\Select::make('status')->label('Statut')->options(['active' => 'Active', 'withdrawn' => 'Retiré'])->default('active')->required(),
         ]);
     }
 

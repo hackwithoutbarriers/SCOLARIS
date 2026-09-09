@@ -14,7 +14,7 @@ class AssessmentResource extends Resource
 {
     protected static ?string $model = Assessment::class;
 
-    protected static ?string $navigationGroup = 'Academic';
+    protected static ?string $navigationGroup = 'Scolarité';
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
@@ -28,7 +28,7 @@ class AssessmentResource extends Resource
             Forms\Components\DatePicker::make('assessment_date'),
             Forms\Components\TextInput::make('max_score')->numeric()->minValue(0.01)->required(),
             Forms\Components\TextInput::make('weight')->numeric()->minValue(0)->required(),
-            Forms\Components\Select::make('status')->options(['draft' => 'Draft', 'published' => 'Published'])->required(),
+            Forms\Components\Select::make('status')->label('Statut')->options(['draft' => 'Brouillon', 'published' => 'Publié'])->required(),
         ]);
     }
 

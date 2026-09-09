@@ -12,7 +12,9 @@ class ReportCardResource extends Resource
 {
     protected static ?string $model = ReportCard::class;
 
-    protected static ?string $navigationGroup = 'Academic';
+    protected static ?string $navigationGroup = 'Scolarité';
+
+    protected static ?string $navigationLabel = 'Bulletins';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
@@ -21,7 +23,7 @@ class ReportCardResource extends Resource
         return $table->columns([
             Tables\Columns\TextColumn::make('student.full_name')->searchable(),
             Tables\Columns\TextColumn::make('academicYear.name'),
-            Tables\Columns\TextColumn::make('term.name')->placeholder('Annual'),
+            Tables\Columns\TextColumn::make('term.name')->placeholder('Annuel'),
             Tables\Columns\TextColumn::make('version'),
             Tables\Columns\TextColumn::make('status')->badge(),
             Tables\Columns\TextColumn::make('generated_at')->dateTime(),

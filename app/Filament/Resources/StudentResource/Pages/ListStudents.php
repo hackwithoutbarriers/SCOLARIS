@@ -19,14 +19,14 @@ class ListStudents extends ListRecords
         return [
             Actions\CreateAction::make(),
             Actions\Action::make('importCsv')
-                ->label('Import CSV')
+                ->label('Importer des élèves')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->form([Forms\Components\FileUpload::make('file')->required()->acceptedFileTypes(['text/csv', 'text/plain'])->disk('local')])
                 ->visible(fn (): bool => auth()->user()?->isDirector() === true)
                 ->action(function (array $data): void {
                     abort_unless(auth()->user()?->isDirector() === true, 403);
                     app(StudentCsvImporter::class)->import(Storage::disk('local')->path($data['file']), auth()->user()->school_id);
-                    Notification::make()->title('Students imported')->success()->send();
+                    Notification::make()->title('Élèves importés')->success()->send();
                 }),
         ];
     }

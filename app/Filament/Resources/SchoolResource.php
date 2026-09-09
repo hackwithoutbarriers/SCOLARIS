@@ -17,7 +17,7 @@ class SchoolResource extends Resource
 {
     protected static ?string $model = School::class;
 
-    protected static ?string $navigationGroup = 'SaaS';
+    protected static ?string $navigationGroup = 'Administration';
 
     protected static ?string $navigationLabel = 'Écoles';
 

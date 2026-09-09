@@ -14,7 +14,7 @@ class GradeResource extends Resource
 {
     protected static ?string $model = Grade::class;
 
-    protected static ?string $navigationGroup = 'Academic';
+    protected static ?string $navigationGroup = 'Scolarité';
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
@@ -28,7 +28,7 @@ class GradeResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('assessment_id')->relationship('assessment', 'title')->required()->searchable()->preload(),
             Forms\Components\Select::make('student_id')->relationship('student', 'student_number')->required()->searchable()->preload(),
-            Forms\Components\TextInput::make('score')->numeric()->minValue(0)->required()->helperText('Cannot exceed the assessment maximum.'),
+            Forms\Components\TextInput::make('score')->numeric()->minValue(0)->required()->helperText('La note ne peut pas dépasser le barème maximal.'),
             Forms\Components\Textarea::make('remarks'),
         ]);
     }

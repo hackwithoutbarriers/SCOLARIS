@@ -26,13 +26,13 @@ class StudentResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('Student')->schema([
+            Forms\Components\Section::make('Élève')->schema([
                 Forms\Components\TextInput::make('admission_number')->required(),
                 Forms\Components\TextInput::make('first_name')->required(),
                 Forms\Components\TextInput::make('last_name')->required(),
                 Forms\Components\DatePicker::make('date_of_birth'),
-                Forms\Components\Select::make('gender')->options(['female' => 'Female', 'male' => 'Male', 'other' => 'Other']),
-                Forms\Components\Select::make('status')->options(['active' => 'Active', 'inactive' => 'Inactive'])->default('active')->required(),
+                Forms\Components\Select::make('gender')->label('Genre')->options(['female' => 'Féminin', 'male' => 'Masculin', 'other' => 'Autre']),
+                Forms\Components\Select::make('status')->label('Statut')->options(['active' => 'Actif', 'inactive' => 'Inactif'])->default('active')->required(),
                 Forms\Components\TextInput::make('email')->email(),
                 Forms\Components\TextInput::make('phone'),
                 Forms\Components\Textarea::make('address')->columnSpanFull(),

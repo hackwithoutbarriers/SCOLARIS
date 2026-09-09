@@ -41,7 +41,7 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->searchable(), TextColumn::make('email')->searchable(), TextColumn::make('school.name')->label('École'), TextColumn::make('role'),
+            TextColumn::make('name')->label('Nom')->searchable(), TextColumn::make('email')->label('E-mail')->searchable(), TextColumn::make('school.name')->label('École'), TextColumn::make('role')->label('Rôle'),
             IconColumn::make('is_active')->boolean(),
         ])->actions([EditAction::make()]);
     }
