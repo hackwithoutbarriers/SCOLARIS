@@ -39,7 +39,7 @@ class AcademicPolicy
 
     public function delete(User $user, Model $model): bool
     {
-        return $this->update($user, $student);
+        return $this->update($user, $model);
     }
 
     public function viewGrades(User $user, Student $student): bool
