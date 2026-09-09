@@ -52,7 +52,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('production')) {
+        $forwardedProto = strtolower((string) request()->header('x-forwarded-proto'));
+
+        if (app()->environment('production') || request()->isSecure() || $forwardedProto === 'https') {
             URL::forceScheme('https');
         }
 
