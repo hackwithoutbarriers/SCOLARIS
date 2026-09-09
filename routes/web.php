@@ -1,30 +1,41 @@
 <?php
 
-use App\Http\Controllers\PdfController;
-use App\Http\Controllers\PublicController;
-use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [PublicController::class, 'home'])->name('home');
-Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
-Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
-Route::get('/services', [PublicController::class, 'services'])->name('services');
-Route::get('/services/{slug}', [PublicController::class, 'service'])->where('slug', '[a-z0-9-]+')->name('services.detail');
-Route::get('/galerie', [PublicController::class, 'gallery'])->name('gallery');
-Route::get('/avis', [ReviewController::class, 'index'])->name('reviews');
-Route::get('/avis/partager', [ReviewController::class, 'shareForm'])->name('reviews.share');
-Route::post('/avis/partager', [ReviewController::class, 'storeShare'])->middleware('throttle:10,1')->name('reviews.store');
-Route::get('/devis', [PublicController::class, 'showQuoteForm'])->name('public.devis');
-Route::post('/devis', [PublicController::class, 'storeQuote'])->middleware('throttle:10,1')->name('public.devis.store');
-Route::post('/api/devis', [PublicController::class, 'storeQuoteApi'])->middleware('throttle:10,1')->name('api.devis.store');
-Route::get('/api/reviews', [ReviewController::class, 'api'])->name('api.reviews');
-Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
-Route::post('/contact', [PublicController::class, 'storeContact'])->middleware('throttle:10,1')->name('contact.store');
+Route::get('/health', fn () => response()->json([
+    'status' => 'ok',
+    'service' => config('app.name'),
+    'version' => trim((string) file_get_contents(base_path('VERSION'))),
+]));
 
-Route::middleware('auth')->group(function (): void {
-    Route::get('/devis/{devis}/pdf', [PdfController::class, 'devis'])->name('devis.pdf');
-    Route::get('/attestations/{attestation}/certificat.pdf', [PdfController::class, 'certificat'])->name('certificat.pdf');
-    Route::get('/attestations/{attestation}/pdf', [PdfController::class, 'attestation'])->name('attestation.pdf');
-    Route::get('/attestations/{attestation}/documents', [PdfController::class, 'documentLinks'])->name('documents.links');
+Route::view('/', 'welcome');
+Route::redirect('/login', '/admin/login', 302);
+Route::get('/register', [\App\Http\Controllers\RegistrationRequestController::class, 'create'])->name('registration-requests.create');
+Route::post('/register', [\App\Http\Controllers\RegistrationRequestController::class, 'store'])->middleware('throttle:5,60')->name('registration-requests.store');
+
+Route::middleware('auth')->get('/teacher/attendance', fn () => view('teacher.attendance'));
+
+Route::middleware(['auth', 'throttle:120,1'])->prefix('api')->group(function () {
+    Route::get('teacher/classes', [\App\Http\Controllers\AttendanceController::class, 'classes']);
+    Route::get('teacher/classes/{classRoom}/students', [\App\Http\Controllers\AttendanceController::class, 'students']);
+    Route::get('attendance/sessions', [\App\Http\Controllers\AttendanceController::class, 'index']);
+    Route::post('attendance/sessions', [\App\Http\Controllers\AttendanceController::class, 'store']);
+    Route::get('attendance/sessions/{attendanceSession}', [\App\Http\Controllers\AttendanceController::class, 'show']);
+    Route::put('attendance/sessions/{attendanceSession}', [\App\Http\Controllers\AttendanceController::class, 'sync']);
+    Route::post('attendance/sessions/{attendanceSession}/sync', [\App\Http\Controllers\AttendanceController::class, 'sync']);
+    Route::post('attendance/sessions/{attendanceSession}/validate', [\App\Http\Controllers\AttendanceController::class, 'validateSession']);
+    Route::post('attendance/sync', [\App\Http\Controllers\AttendanceController::class, 'syncEndpoint']);
+    Route::get('attendance/history', [\App\Http\Controllers\AttendanceController::class, 'history']);
+    Route::get('attendance/dashboard', [\App\Http\Controllers\AttendanceController::class, 'dashboard']);
+    Route::get('academic/students/{student}/grades/{term?}', [\App\Http\Controllers\AcademicController::class, 'grades']);
+    Route::post('academic/assessments/{assessment}/grades', [\App\Http\Controllers\AcademicController::class, 'storeGrade']);
+    Route::post('academic/grades/import', [\App\Http\Controllers\AcademicController::class, 'importGrades']);
+    Route::post('payments', [\App\Http\Controllers\PaymentController::class, 'store']);
+    Route::get('payments/debtors', [\App\Http\Controllers\PaymentController::class, 'debtors']);
+    Route::get('payments/report', [\App\Http\Controllers\PaymentController::class, 'report']);
+    Route::post('payments/webhooks/{provider}', [\App\Http\Controllers\PaymentController::class, 'webhook'])->withoutMiddleware('auth');
 });
+
+Route::middleware('auth')->get('/report-cards/{reportCard}/html', [\App\Http\Controllers\AcademicController::class, 'reportCardHtml'])->name('report-cards.html');
+Route::middleware('auth')->get('/report-cards/{reportCard}/pdf', [\App\Http\Controllers\AcademicController::class, 'reportCardPdf'])->name('report-cards.pdf');
+Route::middleware('auth')->get('/payments/{payment}/receipt', [\App\Http\Controllers\PaymentController::class, 'receipt'])->name('payments.receipt');
