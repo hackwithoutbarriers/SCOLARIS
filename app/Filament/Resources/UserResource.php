@@ -8,6 +8,7 @@ use Filament\Resources\Resource;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\{TextColumn,IconColumn};
 use Filament\Tables\Actions\EditAction;
+use Illuminate\Validation\Rules\Password;
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
@@ -18,7 +19,7 @@ class UserResource extends Resource
         TextInput::make('name')->required(), TextInput::make('email')->email()->required(),
         TextInput::make('phone'), Select::make('school_id')->relationship('school', 'name')->searchable()->preload(),
         Select::make('role')->options(['super_admin'=>'Super Admin','director'=>'Directeur','teacher'=>'Enseignant','accountant'=>'Comptable'])->required(),
-        TextInput::make('password')->password()->dehydrated(fn ($state) => filled($state))->required(fn (string $operation): bool => $operation === 'create'),
+        TextInput::make('password')->password()->dehydrated(fn ($state) => filled($state))->rules([Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()])->required(fn (string $operation): bool => $operation === 'create'),
         Toggle::make('is_active')->default(true),
     ]); }
     public static function table(Table $table): Table { return $table->columns([
