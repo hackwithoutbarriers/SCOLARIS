@@ -13,6 +13,8 @@ use RuntimeException;
 
 final class StudentCsvImporter
 {
+    private const MAX_FILE_SIZE = 5_242_880;
+
     private const REQUIRED_HEADERS = [
         'student_number', 'first_name', 'last_name', 'middle_name', 'date_of_birth',
         'gender', 'class', 'guardian_first_name', 'guardian_last_name', 'guardian_phone',
@@ -21,12 +23,22 @@ final class StudentCsvImporter
     /** @return int|array{analyzed:int,created:int,ignored:int,errors:int,duplicates:int,details:array<int,array<string,mixed>>} */
     public function import(string $path, int $schoolId, ?int $academicYearId = null): int|array
     {
-        if (!is_file($path)) {
+        if (! is_file($path)) {
             throw new RuntimeException('Le fichier CSV est introuvable.');
         }
+        if (filesize($path) === 0) {
+            throw new RuntimeException('Le fichier CSV est vide.');
+        }
+        if (filesize($path) > self::MAX_FILE_SIZE) {
+            throw new RuntimeException('Le fichier CSV dépasse la limite de 5 Mo.');
+        }
+        $contents = file_get_contents($path);
+        if ($contents === false || ! mb_check_encoding($contents, 'UTF-8')) {
+            throw new RuntimeException('Le fichier CSV doit être encodé en UTF-8.');
+        }
 
-        $csv = Reader::createFromPath($path)->setHeaderOffset(0);
-        $headers = array_map('trim', $csv->getHeader());
+        $csv = Reader::createFromString($contents)->setHeaderOffset(0);
+        $headers = array_map(static fn (string $header): string => trim(preg_replace('/^\xEF\xBB\xBF/', '', $header)), $csv->getHeader());
         if (in_array('admission_number', $headers, true)) {
             return $this->importLegacy($csv, $schoolId);
         }
@@ -47,6 +59,7 @@ final class StudentCsvImporter
                     $result['ignored']++;
                     $result['details'][] = ['line' => $line, 'message' => 'student_number déjà utilisé'];
                     $seen[$number] = true;
+
                     continue;
                 }
 
@@ -57,10 +70,13 @@ final class StudentCsvImporter
                     'date_of_birth' => ['nullable', 'date'],
                     'gender' => ['nullable', 'in:female,male,other'],
                     'guardian_phone' => ['required', 'string', 'max:30'],
+                    'guardian_first_name' => ['required', 'string', 'max:100'],
+                    'guardian_last_name' => ['required', 'string', 'max:100'],
                 ]);
                 if ($validator->fails()) {
                     $result['errors']++;
                     $result['details'][] = ['line' => $line, 'message' => $validator->errors()->first()];
+
                     continue;
                 }
 
@@ -74,11 +90,17 @@ final class StudentCsvImporter
                 $guardian = Guardian::firstOrCreate(
                     ['school_id' => $schoolId, 'phone' => trim($row['guardian_phone'])],
                     ['first_name' => trim($row['guardian_first_name']), 'last_name' => trim($row['guardian_last_name']),
-                     'name' => trim($row['guardian_first_name'].' '.$row['guardian_last_name']), 'relationship' => 'Parent', 'active' => true],
+                        'name' => trim($row['guardian_first_name'].' '.$row['guardian_last_name']), 'relationship' => 'Parent', 'active' => true],
                 );
                 $student->guardians()->syncWithoutDetaching([$guardian->id => ['is_primary' => true]]);
 
-                if ($academicYearId && ($class = ClassRoom::where('school_id', $schoolId)->where('name', trim($row['class']))->first())) {
+                if ($academicYearId && ! ($class = ClassRoom::where('school_id', $schoolId)->where('name', trim($row['class']))->first())) {
+                    $result['errors']++;
+                    $result['details'][] = ['line' => $line, 'message' => 'Classe introuvable pour cette école.'];
+
+                    continue;
+                }
+                if ($academicYearId && $class) {
                     Enrollment::create([
                         'school_id' => $schoolId, 'student_id' => $student->id, 'academic_year_id' => $academicYearId,
                         'class_room_id' => $class->id, 'enrollment_date' => now()->toDateString(), 'status' => 'active',
@@ -100,13 +122,21 @@ final class StudentCsvImporter
         $count = 0;
         DB::transaction(function () use ($csv, $schoolId, &$count): void {
             foreach ($csv->getRecords() as $row) {
+                $validator = Validator::make($row, [
+                    'admission_number' => ['required', 'string', 'max:50'],
+                    'first_name' => ['required', 'string', 'max:100'],
+                    'last_name' => ['required', 'string', 'max:100'],
+                ]);
+                if ($validator->fails()) {
+                    throw new RuntimeException('Import annulé: une ligne legacy est invalide.');
+                }
                 $student = Student::updateOrCreate(
                     ['school_id' => $schoolId, 'student_number' => trim($row['admission_number'] ?? '')],
                     ['admission_number' => trim($row['admission_number'] ?? ''), 'first_name' => trim($row['first_name'] ?? ''),
-                     'last_name' => trim($row['last_name'] ?? ''), 'date_of_birth' => $row['date_of_birth'] ?? null,
-                     'status' => 'active', 'active' => true],
+                        'last_name' => trim($row['last_name'] ?? ''), 'date_of_birth' => $row['date_of_birth'] ?? null,
+                        'status' => 'active', 'active' => true],
                 );
-                if (!empty($row['guardian_phone'])) {
+                if (! empty($row['guardian_phone'])) {
                     $guardian = Guardian::firstOrCreate(
                         ['school_id' => $schoolId, 'phone' => trim($row['guardian_phone'])],
                         ['name' => trim($row['guardian_name'] ?? ''), 'relationship' => $row['guardian_relationship'] ?? 'Parent', 'active' => true],
@@ -116,6 +146,7 @@ final class StudentCsvImporter
                 $count++;
             }
         });
+
         return $count;
     }
 }
