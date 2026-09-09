@@ -47,6 +47,38 @@
         #f4f7fb;
 }
 
+.premium-shell {
+    background:
+        radial-gradient(circle at 100% 0, rgba(214, 168, 79, .12), transparent 24rem),
+        #f4f7fb;
+}
+
+.premium-card {
+    border: 1px solid rgba(23, 59, 103, .09);
+    box-shadow: 0 18px 50px rgba(23, 59, 103, .08);
+}
+
+.premium-button {
+    box-shadow: 0 10px 22px rgba(23, 59, 103, .18);
+}
+
+.fi-wi-stats-ctn,
+.fi-wi-widget {
+    border-radius: 1rem;
+}
+
+.fi-wi-stats-ctn > div {
+    border-color: rgba(23, 59, 103, .08);
+}
+
+.fi-header-heading {
+    color: #173b67;
+}
+
+.fi-breadcrumbs {
+    color: #61728b;
+}
+
 .fi-section,
 .fi-wi-widget,
 .fi-ta-ctn,
