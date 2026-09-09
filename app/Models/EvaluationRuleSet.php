@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class EvaluationRuleSet extends Model
 {
-    use HasFactory, BelongsToSchool, Auditable;
+    use Auditable, BelongsToSchool, HasFactory;
 
     protected $fillable = [
         'school_id', 'academic_year_id', 'class_room_id', 'version', 'name',
@@ -26,15 +26,22 @@ class EvaluationRuleSet extends Model
     protected static function booted(): void
     {
         static::saving(function (self $ruleSet): void {
-            if ((float) $ruleSet->maximum_score <= 0 || !in_array($ruleSet->rounding, ['presentation_only', 'half_up', 'down', 'up'], true)) {
-                throw ValidationException::withMessages(['maximum_score' => 'Rule set maximum and rounding policy are invalid.']);
+            if ((float) $ruleSet->maximum_score <= 0 || ! in_array($ruleSet->rounding, ['presentation_only', 'half_up', 'down', 'up'], true)) {
+                throw ValidationException::withMessages(['maximum_score' => 'Le barème maximal ou la règle d’arrondi est invalide.']);
             }
-            if (!in_array($ruleSet->average_method, ['weighted_average', 'simple_average'], true)) {
-                throw ValidationException::withMessages(['average_method' => 'Unsupported average method.']);
+            if (! in_array($ruleSet->average_method, ['weighted_average', 'simple_average'], true)) {
+                throw ValidationException::withMessages(['average_method' => 'Cette méthode de calcul de moyenne n’est pas prise en charge.']);
             }
         });
     }
 
-    public function academicYear(): BelongsTo { return $this->belongsTo(AcademicYear::class); }
-    public function classRoom(): BelongsTo { return $this->belongsTo(ClassRoom::class); }
+    public function academicYear(): BelongsTo
+    {
+        return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function classRoom(): BelongsTo
+    {
+        return $this->belongsTo(ClassRoom::class);
+    }
 }

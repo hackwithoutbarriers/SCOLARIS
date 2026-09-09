@@ -10,10 +10,14 @@ use Illuminate\Validation\ValidationException;
 
 class ReportCardTemplate extends Model
 {
-    use HasFactory, BelongsToSchool, Auditable;
+    use Auditable, BelongsToSchool, HasFactory;
 
     protected $fillable = ['school_id', 'name', 'version', 'status', 'orientation', 'schema', 'active'];
-    protected function casts(): array { return ['schema' => 'array', 'active' => 'boolean']; }
+
+    protected function casts(): array
+    {
+        return ['schema' => 'array', 'active' => 'boolean'];
+    }
 
     protected static function booted(): void
     {
@@ -21,17 +25,17 @@ class ReportCardTemplate extends Model
             self::validateSchema($template->schema);
             $template->status ??= 'DRAFT';
             $template->orientation ??= $template->schema['page']['orientation'] ?? 'portrait';
-            if (!in_array($template->status, ['DRAFT', 'ACTIVE', 'ARCHIVED'], true)) {
-                throw ValidationException::withMessages(['status' => 'Unsupported template status.']);
+            if (! in_array($template->status, ['DRAFT', 'ACTIVE', 'ARCHIVED'], true)) {
+                throw ValidationException::withMessages(['status' => 'Le statut du modèle n’est pas pris en charge.']);
             }
-            if (!in_array($template->orientation, ['portrait', 'landscape'], true)) {
-                throw ValidationException::withMessages(['orientation' => 'Orientation must be portrait or landscape.']);
+            if (! in_array($template->orientation, ['portrait', 'landscape'], true)) {
+                throw ValidationException::withMessages(['orientation' => 'L’orientation doit être portrait ou paysage.']);
             }
         });
         static::saved(function (self $template): void {
             if ($template->status === 'ACTIVE') {
                 self::query()->where('school_id', $template->school_id)->where('id', '<>', $template->id)->where('status', 'ACTIVE')->update(['status' => 'ARCHIVED', 'active' => false]);
-                if (!$template->active) {
+                if (! $template->active) {
                     self::withoutEvents(fn () => $template->update(['active' => true]));
                 }
             }
@@ -54,18 +58,18 @@ class ReportCardTemplate extends Model
 
     public static function validateSchema(?array $schema): void
     {
-        if (!is_array($schema) || !is_array($schema['sections'] ?? null) || $schema['sections'] === []) {
-            throw ValidationException::withMessages(['schema' => 'A template must define at least one section.']);
+        if (! is_array($schema) || ! is_array($schema['sections'] ?? null) || $schema['sections'] === []) {
+            throw ValidationException::withMessages(['schema' => 'Un modèle doit définir au moins une section.']);
         }
-        if (isset($schema['page']['orientation']) && !in_array($schema['page']['orientation'], ['portrait', 'landscape'], true)) {
-            throw ValidationException::withMessages(['schema' => 'Page orientation must be portrait or landscape.']);
+        if (isset($schema['page']['orientation']) && ! in_array($schema['page']['orientation'], ['portrait', 'landscape'], true)) {
+            throw ValidationException::withMessages(['schema' => 'L’orientation de la page doit être portrait ou paysage.']);
         }
-        if (isset($schema['styles']['font_size']) && (!is_numeric($schema['styles']['font_size']) || (float) $schema['styles']['font_size'] < 7 || (float) $schema['styles']['font_size'] > 24)) {
-            throw ValidationException::withMessages(['schema' => 'Font size must be between 7 and 24.']);
+        if (isset($schema['styles']['font_size']) && (! is_numeric($schema['styles']['font_size']) || (float) $schema['styles']['font_size'] < 7 || (float) $schema['styles']['font_size'] > 24)) {
+            throw ValidationException::withMessages(['schema' => 'La taille de police doit être comprise entre 7 et 24.']);
         }
         foreach ($schema['sections'] as $section) {
-            if (!is_string($section) || !in_array($section, ['subjects', 'summary', 'appreciation', 'attendance', 'header'], true)) {
-                throw ValidationException::withMessages(['schema' => 'Template sections contain an unsupported value.']);
+            if (! is_string($section) || ! in_array($section, ['subjects', 'summary', 'appreciation', 'attendance', 'header'], true)) {
+                throw ValidationException::withMessages(['schema' => 'Les sections du modèle contiennent une valeur non prise en charge.']);
             }
         }
     }

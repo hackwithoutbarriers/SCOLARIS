@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AcademicYear;
+use App\Models\AttendanceRecord;
 use App\Models\ReportCard;
 use App\Models\ReportCardTemplate;
 use App\Models\ReportCardVersion;
@@ -19,7 +20,7 @@ final class ReportCardService
     public function generate(Student $student, AcademicYear $year, ?Term $term = null, ?ReportCardTemplate $template = null): ReportCard
     {
         if ($student->school_id !== $year->school_id || ($term && $term->school_id !== $student->school_id) || ($template && $template->school_id !== $student->school_id)) {
-            throw ValidationException::withMessages(['school' => 'Report card records must belong to the same school.']);
+            throw ValidationException::withMessages(['school' => 'Les éléments du bulletin doivent appartenir à la même école.']);
         }
         $payload = $this->calculator->calculate($student, $term);
         $attendance = $this->attendanceSummary($student, $year, $term);
@@ -46,14 +47,30 @@ final class ReportCardService
                 'status' => 'draft', 'data' => $data->toArray(), 'generated_by' => auth()->id(), 'generated_at' => now(),
             ]);
             $this->snapshot($card);
+
             return $card;
         });
     }
 
-    public function submitForReview(ReportCard $card): ReportCard { return $this->transition($card, 'draft', 'review'); }
-    public function approve(ReportCard $card): ReportCard { return $this->transition($card, 'review', 'approved'); }
-    public function publish(ReportCard $card): ReportCard { return $this->transition($card, 'approved', 'published'); }
-    public function requestRevision(ReportCard $card): ReportCard { return $this->transition($card, 'published', 'revision_requested'); }
+    public function submitForReview(ReportCard $card): ReportCard
+    {
+        return $this->transition($card, 'draft', 'review');
+    }
+
+    public function approve(ReportCard $card): ReportCard
+    {
+        return $this->transition($card, 'review', 'approved');
+    }
+
+    public function publish(ReportCard $card): ReportCard
+    {
+        return $this->transition($card, 'approved', 'published');
+    }
+
+    public function requestRevision(ReportCard $card): ReportCard
+    {
+        return $this->transition($card, 'published', 'revision_requested');
+    }
 
     /**
      * Attendance is presentation data only and is scoped to the report period.
@@ -62,7 +79,7 @@ final class ReportCardService
      */
     public function attendanceSummary(Student $student, AcademicYear $year, ?Term $term = null): array
     {
-        $records = \App\Models\AttendanceRecord::query()
+        $records = AttendanceRecord::query()
             ->where('student_id', $student->id)
             ->whereHas('session', function ($query) use ($year, $term): void {
                 $query->where('academic_year_id', $year->id)
@@ -82,6 +99,7 @@ final class ReportCardService
     public function snapshot(ReportCard $card): ReportCardVersion
     {
         $version = (int) ($card->versions()->max('version') ?? 0) + 1;
+
         return $card->versions()->create([
             'school_id' => $card->school_id, 'version' => $version,
             'status' => $card->status, 'data' => $card->data ?? [], 'created_by' => auth()->id(),
@@ -91,10 +109,11 @@ final class ReportCardService
     private function transition(ReportCard $card, string $from, string $to): ReportCard
     {
         if ($card->status !== $from) {
-            throw ValidationException::withMessages(['status' => "A report card must be {$from} before it can be {$to}."]);
+            throw ValidationException::withMessages(['status' => "Le bulletin doit être à l’état « {$from} » avant de passer à « {$to} »."]);
         }
         $card->update(['status' => $to]);
         $this->snapshot($card);
+
         return $card->refresh();
     }
 }

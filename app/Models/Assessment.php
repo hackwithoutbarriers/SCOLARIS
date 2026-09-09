@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 class Assessment extends Model
 {
-    use HasFactory, BelongsToSchool, Auditable;
+    use Auditable, BelongsToSchool, HasFactory;
 
     protected $fillable = [
         'school_id', 'subject_config_id', 'term_id', 'teacher_id', 'title',
@@ -28,14 +28,33 @@ class Assessment extends Model
     {
         static::saving(function (self $assessment): void {
             if ((float) $assessment->max_score <= 0 || (float) $assessment->weight < 0) {
-                throw ValidationException::withMessages(['max_score' => 'Assessment maximum must be positive and weight cannot be negative.']);
+                throw ValidationException::withMessages(['max_score' => 'Le barème maximal doit être positif et le coefficient ne peut pas être négatif.']);
             }
         });
     }
 
-    public function subjectConfig(): BelongsTo { return $this->belongsTo(SubjectConfig::class); }
-    public function term(): BelongsTo { return $this->belongsTo(Term::class); }
-    public function teacher(): BelongsTo { return $this->belongsTo(User::class, 'teacher_id'); }
-    public function grades(): HasMany { return $this->hasMany(Grade::class); }
-    public function isPublished(): bool { return $this->status === 'published'; }
+    public function subjectConfig(): BelongsTo
+    {
+        return $this->belongsTo(SubjectConfig::class);
+    }
+
+    public function term(): BelongsTo
+    {
+        return $this->belongsTo(Term::class);
+    }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class);
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->status === 'published';
+    }
 }

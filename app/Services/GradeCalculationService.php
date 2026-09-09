@@ -6,7 +6,6 @@ use App\Models\Assessment;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Models\Term;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
 final class GradeCalculationService
@@ -14,7 +13,7 @@ final class GradeCalculationService
     public function saveGrade(Assessment $assessment, Student $student, float|int|string $score, array $attributes = []): Grade
     {
         if ($assessment->school_id !== $student->school_id) {
-            throw ValidationException::withMessages(['student' => 'The student and assessment belong to different schools.']);
+            throw ValidationException::withMessages(['student' => 'L’élève et l’évaluation appartiennent à des écoles différentes.']);
         }
         $score = Grade::validateScore($score, $assessment->max_score);
         $normalized = ($score / (float) $assessment->max_score) * 100;
@@ -85,6 +84,7 @@ final class GradeCalculationService
             ? array_sum(array_map(fn (array $subject) => $subject['average'] * $subject['weight'], $subjects)) / $subjectWeight
             : 0.0;
         $passed = count($subjects) ? count(array_filter($subjects, fn (array $subject) => $subject['passed'])) : false;
+
         return [
             'student' => ['id' => $student->id, 'name' => $student->full_name, 'student_number' => $student->student_number],
             'period' => ['term_id' => $term?->id, 'term' => $term?->name],
@@ -94,7 +94,10 @@ final class GradeCalculationService
         ];
     }
 
-    public function calculateStudent(Student|int $student, Term|int|null $term = null): array { return $this->calculate($student, $term); }
+    public function calculateStudent(Student|int $student, Term|int|null $term = null): array
+    {
+        return $this->calculate($student, $term);
+    }
 
     public function rank(Student|int $student, Term|int|null $term = null): ?int
     {
@@ -104,9 +107,12 @@ final class GradeCalculationService
         $averages = $students->mapWithKeys(fn (Student $item) => [$item->id => $this->calculate($item, $term)['summary']['average']])->sortDesc();
         $rank = 1;
         foreach ($averages as $id => $average) {
-            if ($id === $student->id) return $rank;
+            if ($id === $student->id) {
+                return $rank;
+            }
             $rank++;
         }
+
         return null;
     }
 
@@ -115,8 +121,11 @@ final class GradeCalculationService
         $bands = array_values(array_filter($bands, 'is_array'));
         usort($bands, fn (array $a, array $b) => (float) ($b['min'] ?? 0) <=> (float) ($a['min'] ?? 0));
         foreach ($bands as $band) {
-            if ($score >= (float) ($band['min'] ?? 0)) return $band;
+            if ($score >= (float) ($band['min'] ?? 0)) {
+                return $band;
+            }
         }
+
         return [];
     }
 

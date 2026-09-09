@@ -7,6 +7,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -26,9 +27,13 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->viteTheme('resources/css/app.css')
+            ->userMenuItems([
+                MenuItem::make()->label('Français')->url(url('/language/fr')),
+            ])
             ->login()
             ->registration(false)
-            ->colors(['primary' => Color::hex('#1E3A8A'), 'success' => Color::hex('#10B981'), 'warning' => Color::hex('#F59E0B')])
+            ->colors(['primary' => Color::hex('#173B67'), 'success' => Color::hex('#168A68'), 'warning' => Color::hex('#C98224')])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([Pages\Dashboard::class])
