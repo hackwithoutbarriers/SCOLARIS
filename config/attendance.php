@@ -10,6 +10,7 @@ return ['notifications'=>[
             'payment_received'=>env('WHATSAPP_TEMPLATE_PAYMENT_RECEIVED'),
             'payment_reminder'=>env('WHATSAPP_TEMPLATE_PAYMENT_REMINDER'),
             'payment_overdue'=>env('WHATSAPP_TEMPLATE_PAYMENT_OVERDUE'),
+            'invitation'=>env('WHATSAPP_TEMPLATE_INVITATION'),
         ],
     ],
     'http_url'=>env('SMS_API_URL'),

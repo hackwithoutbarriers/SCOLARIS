@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureActiveUser;
+use App\Http\Middleware\EnsurePasswordChange;
 use App\Http\Middleware\SetApplicationLocale;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -16,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: env('TRUSTED_PROXIES'));
         $middleware->redirectGuestsTo(fn () => '/admin/login');
-        $middleware->alias(['active' => EnsureActiveUser::class]);
+        $middleware->alias([
+            'active' => EnsureActiveUser::class,
+            'password.change' => EnsurePasswordChange::class,
+        ]);
         $middleware->web(append: [SetApplicationLocale::class]);
         $middleware->append(SecurityHeaders::class);
     })

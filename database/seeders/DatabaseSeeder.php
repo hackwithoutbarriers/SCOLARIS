@@ -40,10 +40,6 @@ class DatabaseSeeder extends Seeder
             ['school_id' => $school->id, 'name' => '2026-2027'],
             ['start_date' => '2026-09-01', 'end_date' => '2027-08-31', 'status' => 'active', 'is_current' => true],
         );
-        $admin = User::updateOrCreate(['email' => 'admin@example.com'], [
-            'name' => 'Super Admin', 'first_name' => 'Super', 'last_name' => 'Admin', 'school_id' => null, 'role' => 'super_admin',
-            'password' => Hash::make('password'), 'is_active' => true, 'email_verified_at' => now(),
-        ]);
         User::updateOrCreate(['email' => 'director@example.com'], [
             'name' => 'Demo Director', 'first_name' => 'Demo', 'last_name' => 'Director',
             'school_id' => $school->id, 'role' => 'director', 'password' => Hash::make('password'), 'is_active' => true, 'email_verified_at' => now(),
