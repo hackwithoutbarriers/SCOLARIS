@@ -2,16 +2,17 @@
 
 namespace App\Services\Payments;
 
-use App\Models\CollectionReminder;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
-use App\Models\PaymentTransaction;
 use App\Models\PaymentReversal;
+use App\Models\PaymentTransaction;
 use App\Models\Receipt;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use App\Services\NotificationService;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
@@ -19,26 +20,26 @@ class PaymentService
     {
         try {
             return DB::transaction(function () use ($data): Payment {
-            if (!empty($data['idempotency_key'])) {
-                $existing = Payment::query()
-                    ->where('school_id', $data['school_id'])
-                    ->where('idempotency_key', $data['idempotency_key'])
-                    ->first();
-                if ($existing) {
-                    return $existing->load('allocations.invoice', 'receipt');
+                if (! empty($data['idempotency_key'])) {
+                    $existing = Payment::query()
+                        ->where('school_id', $data['school_id'])
+                        ->where('idempotency_key', $data['idempotency_key'])
+                        ->first();
+                    if ($existing) {
+                        return $existing->load('allocations.invoice', 'receipt');
+                    }
                 }
-            }
-            $payment = Payment::create([
-                ...$data,
-                'status' => Payment::CONFIRMED,
-                'paid_at' => $data['paid_at'] ?? now(),
-                'received_by' => $data['received_by'] ?? auth()->id(),
-            ]);
+                $payment = Payment::create([
+                    ...$data,
+                    'status' => Payment::CONFIRMED,
+                    'paid_at' => $data['paid_at'] ?? now(),
+                    'received_by' => $data['received_by'] ?? auth()->id(),
+                ]);
 
                 return $this->confirm($payment);
             });
         } catch (QueryException $exception) {
-            if (!empty($data['idempotency_key']) && str_contains(strtolower($exception->getMessage()), 'unique')) {
+            if (! empty($data['idempotency_key']) && str_contains(strtolower($exception->getMessage()), 'unique')) {
                 return Payment::query()
                     ->where('school_id', $data['school_id'])
                     ->where('idempotency_key', $data['idempotency_key'])
@@ -68,9 +69,13 @@ class PaymentService
                 ->lockForUpdate()->get();
 
             foreach ($invoices as $invoice) {
-                if ($remaining <= 0) break;
+                if ($remaining <= 0) {
+                    break;
+                }
                 $allocation = min($remaining, $invoice->balance());
-                if ($allocation <= 0) continue;
+                if ($allocation <= 0) {
+                    continue;
+                }
                 PaymentAllocation::firstOrCreate(
                     ['payment_id' => $payment->id, 'invoice_id' => $invoice->id],
                     ['school_id' => $payment->school_id, 'amount' => $allocation]
@@ -87,10 +92,12 @@ class PaymentService
                 ['payment_id' => $payment->id],
                 ['school_id' => $payment->school_id, 'number' => 'REC-'.now()->format('Ym').'-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT), 'balance_after' => $balance]
             );
-            if ($receipt->balance_after !== $balance) $receipt->update(['balance_after' => $balance]);
+            if ($receipt->balance_after !== $balance) {
+                $receipt->update(['balance_after' => $balance]);
+            }
             $payment->load('student', 'allocations.invoice');
             foreach ($payment->allocations as $allocation) {
-                app(\App\Services\NotificationService::class)->queueFinancial($payment->student, $allocation->invoice, 'payment_received', 'sms', [
+                app(NotificationService::class)->queueFinancial($payment->student, $allocation->invoice, 'payment_received', 'sms', [
                     'amount' => $allocation->amount,
                     'balance' => $allocation->invoice->balance(),
                     'reference' => $payment->reference,
@@ -116,6 +123,11 @@ class PaymentService
 
     public function reverse(Payment $payment, int $amount, string $reason): PaymentReversal
     {
+        Gate::authorize('reverse', $payment);
+        if (mb_strlen(trim($reason)) < 10) {
+            throw ValidationException::withMessages(['reason' => 'Le motif de correction doit comporter au moins 10 caractères.']);
+        }
+
         return DB::transaction(function () use ($payment, $amount, $reason): PaymentReversal {
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             $reversed = (int) $payment->reversals()->sum('amount');
@@ -125,11 +137,15 @@ class PaymentService
             $remaining = $amount;
             $reversal = null;
             foreach ($payment->allocations as $allocation) {
-                if ($remaining <= 0) break;
+                if ($remaining <= 0) {
+                    break;
+                }
                 $alreadyReversed = (int) PaymentReversal::query()->where('payment_id', $payment->id)->where('invoice_id', $allocation->invoice_id)->sum('amount');
                 $available = max(0, $allocation->amount - $alreadyReversed);
                 $portion = min($remaining, $available);
-                if ($portion === 0) continue;
+                if ($portion === 0) {
+                    continue;
+                }
                 $reversal = PaymentReversal::create([
                     'school_id' => $payment->school_id, 'payment_id' => $payment->id, 'invoice_id' => $allocation->invoice_id,
                     'amount' => $portion, 'reason' => $reason, 'created_by' => auth()->id(),
@@ -143,6 +159,7 @@ class PaymentService
                     'amount' => $remaining, 'reason' => $reason, 'created_by' => auth()->id(),
                 ]);
             }
+
             return $reversal;
         });
     }
@@ -151,8 +168,12 @@ class PaymentService
     {
         return DB::transaction(function () use ($transaction, $payload): PaymentTransaction {
             $transaction = PaymentTransaction::query()->lockForUpdate()->findOrFail($transaction->id);
-            if ($transaction->status === Payment::CONFIRMED) return $transaction;
-            if ($transaction->payment?->status === Payment::CONFIRMED) return $transaction;
+            if ($transaction->status === Payment::CONFIRMED) {
+                return $transaction;
+            }
+            if ($transaction->payment?->status === Payment::CONFIRMED) {
+                return $transaction;
+            }
             $transaction->update([
                 'provider_transaction_id' => $payload['provider_transaction_id'] ?? $transaction->provider_transaction_id,
                 'status' => $payload['status'],
@@ -164,6 +185,7 @@ class PaymentService
             } elseif (in_array($payload['status'], [Payment::FAILED, Payment::CANCELLED], true) && $transaction->payment) {
                 $transaction->payment->update(['status' => $payload['status']]);
             }
+
             return $transaction->fresh('payment');
         });
     }

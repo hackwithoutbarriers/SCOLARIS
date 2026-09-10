@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class Grade extends Model
 {
-    use HasFactory, BelongsToSchool, Auditable;
+    use Auditable, BelongsToSchool, HasFactory;
 
     protected $fillable = [
         'school_id', 'assessment_id', 'student_id', 'graded_by', 'score',
@@ -29,17 +29,31 @@ class Grade extends Model
             $assessment = $grade->relationLoaded('assessment')
                 ? $grade->assessment
                 : Assessment::withoutGlobalScopes()->find($grade->assessment_id);
-            if (!$assessment) {
+            if (! $assessment) {
                 throw ValidationException::withMessages(['assessment_id' => 'The assessment does not exist.']);
+            }
+            if ($assessment->term_id && Term::query()->whereKey($assessment->term_id)->where('status', 'closed')->exists()) {
+                throw ValidationException::withMessages(['assessment_id' => 'La période de cette évaluation est clôturée.']);
             }
             $grade->score = self::validateScore($grade->score, $assessment->max_score);
             $grade->normalized_score ??= ((float) $grade->score / (float) $assessment->max_score) * 100;
         });
     }
 
-    public function assessment(): BelongsTo { return $this->belongsTo(Assessment::class); }
-    public function student(): BelongsTo { return $this->belongsTo(Student::class); }
-    public function grader(): BelongsTo { return $this->belongsTo(User::class, 'graded_by'); }
+    public function assessment(): BelongsTo
+    {
+        return $this->belongsTo(Assessment::class);
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function grader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'graded_by');
+    }
 
     public static function validateScore(float|int|string $score, float|int|string $maxScore): float
     {
@@ -48,6 +62,7 @@ class Grade extends Model
         if ($maxScore <= 0 || $score < 0 || $score > $maxScore) {
             throw ValidationException::withMessages(['score' => 'The score must be between 0 and the assessment maximum.']);
         }
+
         return $score;
     }
 }

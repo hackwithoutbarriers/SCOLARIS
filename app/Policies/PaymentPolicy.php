@@ -29,11 +29,23 @@ class PaymentPolicy
 
     public function update(User $user, Payment $payment): bool
     {
-        return $user->is_active && $user->isDirector() && $payment->school_id === $user->school_id;
+        return $user->is_active && $user->isFinanceOperator() && $payment->school_id === $user->school_id;
     }
 
     public function delete(User $user, Payment $payment): bool
     {
         return $user->is_active && $user->isDirector() && $payment->school_id === $user->school_id;
+    }
+
+    /**
+     * Reversals are the safe correction mechanism. Accountants may request and
+     * execute a correction through the transactional service, while deletion
+     * remains reserved for the director.
+     */
+    public function reverse(User $user, Payment $payment): bool
+    {
+        return $user->is_active
+            && $user->isFinanceOperator()
+            && $payment->school_id === $user->school_id;
     }
 }

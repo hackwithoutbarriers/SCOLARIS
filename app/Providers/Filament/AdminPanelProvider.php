@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Widgets\RoleActionCenter;
+use App\Filament\Widgets\SchoolSupportOverview;
+use App\Filament\Widgets\SuperAdminOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,7 +30,9 @@ class AdminPanelProvider extends PanelProvider
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::STYLES_BEFORE,
-            fn (): string => app(Vite::class)('resources/css/filament-admin-premium.css')->toHtml(),
+            fn (): string => is_file(public_path('build/manifest.json'))
+                ? app(Vite::class)('resources/css/filament-admin-premium.css')->toHtml()
+                : '',
         );
     }
 
@@ -49,6 +53,8 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Pages\Dashboard::class])
             ->widgets([
                 RoleActionCenter::class,
+                SuperAdminOverview::class,
+                SchoolSupportOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class,

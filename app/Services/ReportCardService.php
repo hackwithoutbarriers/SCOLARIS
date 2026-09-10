@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\Term;
 use App\Support\Academic\ReportCardData;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 final class ReportCardService
@@ -54,21 +55,32 @@ final class ReportCardService
 
     public function submitForReview(ReportCard $card): ReportCard
     {
+        Gate::authorize('viewReportCard', $card);
+
         return $this->transition($card, 'draft', 'review');
     }
 
     public function approve(ReportCard $card): ReportCard
     {
+        Gate::authorize('update', $card);
+        abort_unless(auth()->user()->isDirector(), 403);
+
         return $this->transition($card, 'review', 'approved');
     }
 
     public function publish(ReportCard $card): ReportCard
     {
+        Gate::authorize('update', $card);
+        abort_unless(auth()->user()->isDirector(), 403);
+
         return $this->transition($card, 'approved', 'published');
     }
 
     public function requestRevision(ReportCard $card): ReportCard
     {
+        Gate::authorize('update', $card);
+        abort_unless(auth()->user()->isDirector(), 403);
+
         return $this->transition($card, 'published', 'revision_requested');
     }
 
@@ -108,6 +120,10 @@ final class ReportCardService
 
     private function transition(ReportCard $card, string $from, string $to): ReportCard
     {
+        if ($card->term?->isClosed()) {
+            throw ValidationException::withMessages(['term' => 'Cette période est clôturée et ne peut plus être modifiée.']);
+        }
+
         if ($card->status !== $from) {
             throw ValidationException::withMessages(['status' => "Le bulletin doit être à l’état « {$from} » avant de passer à « {$to} »."]);
         }

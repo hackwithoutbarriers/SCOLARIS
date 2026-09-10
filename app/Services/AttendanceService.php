@@ -7,6 +7,7 @@ use App\Models\AttendanceSession;
 use App\Models\ClassRoom;
 use App\Models\Enrollment;
 use App\Models\TeacherAssignment;
+use App\Models\Term;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -34,6 +35,7 @@ class AttendanceService
         $class = ClassRoom::withoutGlobalScopes()->findOrFail($data['class_room_id']);
         abort_unless((int) $class->school_id === (int) $user->school_id, 403);
         $data['academic_year_id'] = $class->academic_year_id;
+        abort_unless(! Term::isClosedForDate((int) $user->school_id, (int) $data['academic_year_id'], $data['session_date'] ?? today()), 422, 'La période de présence est clôturée.');
         if (! $user->isAdmin() && ! TeacherAssignment::where('teacher_id', $user->id)
             ->where('class_room_id', $class->id)->where('academic_year_id', $class->academic_year_id)->exists()) {
             abort(403);
@@ -55,6 +57,7 @@ class AttendanceService
     {
         return DB::transaction(function () use ($session, $records): array {
             $session = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_unless(! Term::isClosedForDate((int) $session->school_id, (int) $session->academic_year_id, $session->session_date), 422, 'La période de présence est clôturée.');
             $result = [];
             if ($session->status === 'VALIDATED') {
                 throw ValidationException::withMessages(['session' => 'Une séance validée nécessite une correction contrôlée.']);
@@ -140,6 +143,7 @@ class AttendanceService
     public function validateSession(AttendanceSession $session, User $user): AttendanceSession
     {
         abort_unless($this->canManage($session, $user), 403);
+        abort_unless(! Term::isClosedForDate((int) $session->school_id, (int) $session->academic_year_id, $session->session_date), 422, 'La période de présence est clôturée.');
         if ($session->status === 'CANCELLED') {
             throw ValidationException::withMessages(['session' => 'Une séance annulée ne peut pas être validée.']);
         }
