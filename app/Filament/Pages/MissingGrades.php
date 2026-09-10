@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Models\Assessment;
 use Filament\Pages\Page;
+use App\Filament\Pages\Dashboard;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -24,6 +26,11 @@ class MissingGrades extends Page
         return auth()->user()?->isDirector() === true || auth()->user()?->role === 'teacher';
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public function getAssessments(): Collection
     {
         $user = auth()->user();
@@ -32,8 +39,17 @@ class MissingGrades extends Page
             ->with(['subjectConfig.subject', 'term', 'teacher'])
             ->whereDoesntHave('grades')
             ->when($user?->role === 'teacher', fn (Builder $query) => $query->where('teacher_id', $user->id))
+            ->when($user?->role === 'teacher', fn (Builder $query) => $query->whereHas(
+                'subjectConfig.classRoom.teacherAssignments',
+                fn (Builder $assignment) => $assignment->where('teacher_id', $user->id)
+            ))
             ->latest('assessment_date')
             ->limit(100)
             ->get();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [Action::make('dashboard')->label('Retour au tableau de bord')->icon('heroicon-o-arrow-left')->url(Dashboard::getUrl())];
     }
 }

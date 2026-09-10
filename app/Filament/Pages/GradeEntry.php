@@ -6,6 +6,7 @@ use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\Student;
 use App\Services\GradeCalculationService;
+use App\Filament\Pages\Dashboard;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -16,6 +17,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Builder;
 
 class GradeEntry extends Page implements HasForms
 {
@@ -31,7 +33,12 @@ class GradeEntry extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isDirector() || auth()->user()?->role === 'teacher';
+        return auth()->user()?->isDirector() === true || auth()->user()?->role === 'teacher';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public ?array $data = [];
@@ -46,18 +53,30 @@ class GradeEntry extends Page implements HasForms
         return $form->schema([
             Select::make('assessment_id')
                 ->label('Évaluation')
-                ->options(fn () => Assessment::query()->with('subjectConfig.subject')->latest('assessment_date')->get()->mapWithKeys(fn (Assessment $assessment) => [
+                ->options(fn () => Assessment::query()->with('subjectConfig.subject')->when(
+                    auth()->user()?->role === 'teacher',
+                    fn (Builder $query) => $query->where('teacher_id', auth()->id())
+                )->latest('assessment_date')->get()->mapWithKeys(fn (Assessment $assessment) => [
                     $assessment->id => $assessment->subjectConfig?->subject?->name.' — '.$assessment->title.' (max '.$assessment->max_score.')',
                 ]))
                 ->searchable()
                 ->live()
                 ->required()
                 ->afterStateUpdated(function ($state, Set $set): void {
-                    $assessment = $state ? Assessment::query()->with('subjectConfig')->find($state) : null;
+                    $assessment = $state ? Assessment::query()->with('subjectConfig')->whereKey($state)->when(
+                        auth()->user()?->role === 'teacher',
+                        fn (Builder $query) => $query->where('teacher_id', auth()->id())
+                    )->first() : null;
                     $classRoomId = $assessment?->subjectConfig?->class_room_id;
                     $students = $assessment
                         ? Enrollment::query()->with('student')->where('academic_year_id', $assessment->subjectConfig?->academic_year_id)
                             ->when($classRoomId, fn ($query) => $query->where('class_room_id', $classRoomId))
+                            ->when(auth()->user()?->role === 'teacher', fn (Builder $query) => $query->whereHas(
+                                'classRoom.teacherAssignments',
+                                fn (Builder $assignment) => $assignment
+                                    ->where('teacher_id', auth()->id())
+                                    ->where('subject_id', $assessment->subjectConfig?->subject_id)
+                            ))
                             ->where('status', 'active')->get()->unique('student_id')
                         : collect();
                     $set('grades', $students->map(fn (Enrollment $enrollment) => [
@@ -82,6 +101,10 @@ class GradeEntry extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('dashboard')
+                ->label('Retour au tableau de bord')
+                ->icon('heroicon-o-arrow-left')
+                ->url(Dashboard::getUrl()),
             Action::make('save')
                 ->label('Enregistrer les notes')
                 ->color('primary')
@@ -92,7 +115,10 @@ class GradeEntry extends Page implements HasForms
     public function save(GradeCalculationService $calculator): void
     {
         $state = $this->form->getState();
-        $assessment = Assessment::query()->findOrFail($state['assessment_id']);
+        $assessment = Assessment::query()->when(
+            auth()->user()?->role === 'teacher',
+            fn (Builder $query) => $query->where('teacher_id', auth()->id())
+        )->findOrFail($state['assessment_id']);
         $saved = 0;
         foreach ($state['grades'] ?? [] as $row) {
             if ($row['score'] === null || $row['score'] === '') {

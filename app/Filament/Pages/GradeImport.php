@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Services\GradeCsvImporter;
+use App\Filament\Pages\Dashboard;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -28,6 +29,8 @@ class GradeImport extends Page implements HasForms
     {
         return auth()->user()?->isDirector() === true;
     }
+
+    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
 
     public ?array $data = [];
 
@@ -55,6 +58,10 @@ class GradeImport extends Page implements HasForms
                 ->requiresConfirmation()
                 ->visible(fn (): bool => $this->preview !== [])
                 ->action('import'),
+            Action::make('dashboard')
+                ->label('Retour au tableau de bord')
+                ->icon('heroicon-o-arrow-left')
+                ->url(Dashboard::getUrl()),
         ];
     }
 

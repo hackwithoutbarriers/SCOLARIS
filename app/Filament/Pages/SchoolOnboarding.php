@@ -31,6 +31,8 @@ class SchoolOnboarding extends Page
         return auth()->user()?->isDirector() === true;
     }
 
+    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
+
     public function getSteps(): array
     {
         $user = auth()->user();

@@ -8,6 +8,8 @@ use App\Models\School;
 use App\Services\SuperAdminInterventionService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Actions\Action;
+use App\Filament\Pages\Dashboard;
 use Illuminate\Database\Eloquent\Collection;
 
 class SchoolSupport extends Page
@@ -28,6 +30,8 @@ class SchoolSupport extends Page
     {
         return auth()->user()?->isSuperAdmin() === true;
     }
+
+    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
 
     public function mount(): void
     {
@@ -63,16 +67,22 @@ class SchoolSupport extends Page
         ];
     }
 
-    public function recordIntervention(string $action): void
+    public function recordIntervention(string $action, string $url): void
     {
         $school = $this->getSelectedSchool();
         abort_unless($school, 422, 'Sélectionnez une école avant toute intervention.');
         app(SuperAdminInterventionService::class)->record($school, $action, ['source' => 'school_support']);
         Notification::make()->success()->title('Intervention journalisée.')->send();
+        $this->redirect($url);
     }
 
     public function getInterventions(): Collection
     {
         return AuditLog::query()->where('school_id', $this->school)->where('action', 'like', 'super_admin.%')->latest()->limit(20)->get();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [Action::make('dashboard')->label('Retour au tableau de bord')->icon('heroicon-o-arrow-left')->url(Dashboard::getUrl())];
     }
 }
