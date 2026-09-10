@@ -11,11 +11,11 @@ class School extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'slug', 'timezone', 'email', 'phone', 'address', 'city', 'country', 'logo_path', 'active', 'due_reminder_days', 'due_reminders_enabled', 'single_operator_mode', 'expense_categories'];
+    protected $fillable = ['name', 'code', 'slug', 'timezone', 'email', 'phone', 'address', 'city', 'country', 'logo_path', 'active', 'due_reminder_days', 'due_reminders_enabled', 'single_operator_mode', 'expense_categories', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_encryption', 'whatsapp_provider'];
 
     protected function casts(): array
     {
-        return ['active' => 'boolean', 'due_reminder_days' => 'integer', 'due_reminders_enabled' => 'boolean', 'single_operator_mode' => 'boolean', 'expense_categories' => 'array'];
+        return ['active' => 'boolean', 'due_reminder_days' => 'integer', 'due_reminders_enabled' => 'boolean', 'single_operator_mode' => 'boolean', 'expense_categories' => 'array', 'mail_password' => 'encrypted', 'mail_port' => 'integer'];
     }
 
     protected static function booted(): void

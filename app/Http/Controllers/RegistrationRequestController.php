@@ -28,17 +28,13 @@ class RegistrationRequestController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'requested_role' => ['required', 'in:director,teacher,accountant'],
-            'school_id' => ['required_unless:requested_role,director', 'nullable', 'integer', 'exists:schools,id'],
-            'school_name' => ['required_if:requested_role,director', 'nullable', 'string', 'max:255'],
+            'requested_role' => ['required', 'in:director'],
+            'school_id' => ['prohibited', 'nullable'],
+            'school_name' => ['required', 'string', 'max:255'],
             'school_code' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
         ]);
 
-        if (($data['requested_role'] ?? null) !== 'director' && !empty($data['school_code'])) {
-            $school = School::query()->findOrFail($data['school_id']);
-            abort_unless(strcasecmp($school->code, trim($data['school_code'])) === 0, 422, 'Le code école ne correspond pas à l’école sélectionnée.');
-        }
 
         $duplicate = RegistrationRequest::query()
             ->where('email', strtolower($data['email']))

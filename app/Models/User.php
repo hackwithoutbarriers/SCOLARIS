@@ -29,7 +29,9 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'school_id',
         'role',
+        'secondary_role',
         'is_active',
+        'must_change_password',
         'email_verified_at',
         'onboarding_step',
         'onboarding_completed_at',
@@ -56,6 +58,7 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'onboarding_step' => 'integer',
             'onboarding_completed_at' => 'datetime',
         ];
@@ -73,7 +76,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function isDirector(): bool
     {
-        return $this->is_active && in_array($this->role, ['director', 'admin', 'principal'], true);
+        return $this->is_active && $this->hasRole(['director', 'admin', 'principal']);
     }
 
     public function isAdmin(): bool
@@ -83,7 +86,20 @@ class User extends Authenticatable implements FilamentUser
 
     public function isFinanceOperator(): bool
     {
-        return $this->is_active && ($this->isSuperAdmin() || $this->isDirector() || $this->role === 'accountant');
+        return $this->is_active && ($this->isSuperAdmin() || $this->isDirector() || $this->hasRole('accountant'));
+    }
+
+    public function isSecretary(): bool
+    {
+        return $this->is_active && $this->hasRole('secretary');
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = (array) $roles;
+
+        return in_array($this->role, $roles, true)
+            || in_array($this->secondary_role, $roles, true);
     }
 
     public function canAccessPanel(Panel $panel): bool

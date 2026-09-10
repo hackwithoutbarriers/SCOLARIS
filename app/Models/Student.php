@@ -35,6 +35,7 @@ class Student extends Model
         });
     }
     public function guardians(): BelongsToMany { return $this->belongsToMany(Guardian::class, 'guardian_student')->withPivot('is_primary', 'receives_sms', 'receives_whatsapp')->withTimestamps(); }
+    public function primaryGuardian(): BelongsToMany { return $this->guardians()->wherePivot('is_primary', true); }
     public function enrollments(): HasMany { return $this->hasMany(Enrollment::class); }
     public function grades(): HasMany { return $this->hasMany(Grade::class); }
     public function reportCards(): HasMany { return $this->hasMany(ReportCard::class); }

@@ -29,12 +29,14 @@ class AcademicPolicy
 
     public function create(User $user): bool
     {
-        return $user->isDirector() && $user->school_id !== null && $user->is_active;
+        return $user->is_active && $user->school_id !== null && ($user->isDirector() || $user->role === 'secretary');
     }
 
     public function update(User $user, Model $model): bool
     {
-        return $user->isDirector() && $model->school_id === $user->school_id && $user->is_active;
+        return $model instanceof Student
+            ? $this->viewGrades($user, $model)
+            : $user->isDirector() && $model->school_id === $user->school_id && $user->is_active;
     }
 
     public function delete(User $user, Model $model): bool
@@ -52,9 +54,12 @@ class AcademicPolicy
             return true;
         }
 
-        return $user->role === 'teacher'
+        return in_array($user->role, ['teacher', 'secretary'], true)
             && $student->enrollments()
-                ->whereHas('classRoom.teacherAssignments', fn ($query) => $query->where('teacher_id', $user->id))
+                ->when($user->role === 'teacher', fn ($query) => $query->whereHas(
+                    'classRoom.teacherAssignments',
+                    fn ($assignment) => $assignment->where('teacher_id', $user->id)
+                ))
                 ->exists();
     }
 

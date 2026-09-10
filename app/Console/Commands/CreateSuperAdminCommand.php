@@ -13,7 +13,7 @@ class CreateSuperAdminCommand extends Command
         {--name= : Display name; defaults to SCOLARIS_OWNER_NAME}
         {--password= : Password; defaults to SCOLARIS_OWNER_PASSWORD}';
 
-    protected $description = 'Create or update a Scolaris super administrator';
+    protected $description = 'Create a Scolaris super administrator';
 
     public function handle(): int
     {
@@ -40,19 +40,23 @@ class CreateSuperAdminCommand extends Command
             return self::INVALID;
         }
 
-        $user = \App\Models\User::withoutGlobalScopes()->updateOrCreate(
-            ['email' => $email],
-            [
+        if (\App\Models\User::withoutGlobalScopes()->where('email', $email)->exists()) {
+            $this->error('Un compte existe déjà avec cette adresse. Aucun changement n’a été effectué.');
+            return self::FAILURE;
+        }
+
+        $user = \App\Models\User::withoutGlobalScopes()->create([
                 'name' => $name,
                 'first_name' => $name,
                 'last_name' => null,
+                'email' => $email,
                 'school_id' => null,
                 'role' => 'super_admin',
                 'password' => Hash::make($password),
                 'is_active' => true,
+                'must_change_password' => true,
                 'email_verified_at' => now(),
-            ],
-        );
+        ]);
 
         $this->info("Super Admin ready: {$user->email}");
 

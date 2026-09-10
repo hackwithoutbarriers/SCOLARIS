@@ -10,7 +10,10 @@ class EnsureActiveUser
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->is_active === true, 403);
+        if ($request->user()?->is_active !== true) {
+            auth()->logout();
+            abort(403, 'Compte désactivé.');
+        }
 
         return $next($request);
     }
