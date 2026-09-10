@@ -16,7 +16,7 @@ class GradeImport extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationGroup = 'Academic';
+    protected static ?string $navigationGroup = 'Scolarité';
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
 

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TermResource\Pages;
 use App\Models\Term;
+use App\Services\TermClosureService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -26,14 +27,30 @@ class TermResource extends Resource
             Forms\Components\DatePicker::make('starts_at')->required(),
             Forms\Components\DatePicker::make('ends_at')->required(),
             Forms\Components\TextInput::make('sort_order')->numeric()->default(1)->required(),
+            Forms\Components\Placeholder::make('status')->label('État')->content(fn (?Term $record): string => $record?->status === 'closed' ? 'Clôturée' : 'Ouverte'),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            Tables\Columns\TextColumn::make('name')->label('Période'), Tables\Columns\TextColumn::make('academicYear.name')->label('Année scolaire'), Tables\Columns\TextColumn::make('starts_at')->label('Début')->date(), Tables\Columns\TextColumn::make('ends_at')->label('Fin')->date(),
-        ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            Tables\Columns\TextColumn::make('name')->label('Période'),
+            Tables\Columns\TextColumn::make('academicYear.name')->label('Année scolaire'),
+            Tables\Columns\TextColumn::make('starts_at')->label('Début')->date(),
+            Tables\Columns\TextColumn::make('ends_at')->label('Fin')->date(),
+            Tables\Columns\TextColumn::make('status')->label('État')->badge()->formatStateUsing(fn (string $state): string => $state === 'closed' ? 'Clôturée' : 'Ouverte'),
+        ])->actions([
+            Tables\Actions\EditAction::make()->hidden(fn (Term $record): bool => $record->isClosed()),
+            Tables\Actions\Action::make('close')
+                ->label('Clôturer la période')
+                ->icon('heroicon-o-lock-closed')
+                ->color('warning')
+                ->visible(fn (Term $record): bool => $record->status !== 'closed' && auth()->user()?->isDirector())
+                ->requiresConfirmation()
+                ->modalHeading('Clôturer cette période ?')
+                ->modalDescription('Les notes, bulletins, présences, inscriptions et opérations financières de cette période ne pourront plus être modifiés sans procédure de réouverture contrôlée.')
+                ->action(fn (Term $record): Term => app(TermClosureService::class)->close($record)),
+        ])->bulkActions([]);
     }
 
     public static function getPages(): array

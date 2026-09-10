@@ -7,6 +7,8 @@ use App\Filament\Widgets\AttendanceOverview;
 use App\Filament\Widgets\FinanceOverview;
 use App\Filament\Widgets\RoleActionCenter;
 use App\Filament\Widgets\SchoolStatsOverview;
+use App\Filament\Widgets\SchoolSupportOverview;
+use App\Filament\Widgets\SuperAdminOverview;
 use App\Models\ClassRoom;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -25,8 +27,20 @@ class Dashboard extends BaseDashboard
 
     public function filtersForm(Form $form): Form
     {
+        if (auth()->user()?->isSuperAdmin()) {
+            return $form->schema([]);
+        }
+
         return $form->schema([
+            Select::make('period')->label('Périmètre')->options([
+                'today' => 'Aujourd’hui',
+                'active_term' => 'Période active',
+                'academic_year' => 'Année scolaire active',
+                'custom' => 'Période personnalisée',
+            ])->default('today')->live(),
             DatePicker::make('date')->label('Date')->default(now()->toDateString()),
+            DatePicker::make('from')->label('Du')->visible(fn ($get): bool => $get('period') === 'custom'),
+            DatePicker::make('to')->label('Au')->visible(fn ($get): bool => $get('period') === 'custom'),
             Select::make('class_room_id')
                 ->label('Classe')
                 ->options(fn () => ClassRoom::query()->orderBy('name')->pluck('name', 'id'))
@@ -37,6 +51,10 @@ class Dashboard extends BaseDashboard
 
     public function getWidgets(): array
     {
+        if (auth()->user()?->isSuperAdmin()) {
+            return [SuperAdminOverview::class, SchoolSupportOverview::class];
+        }
+
         $widgets = [RoleActionCenter::class, SchoolStatsOverview::class, AcademicOverview::class];
 
         if (auth()->user()?->isAdmin()) {

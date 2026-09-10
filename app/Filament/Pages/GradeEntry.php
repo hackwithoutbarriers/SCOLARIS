@@ -21,7 +21,7 @@ class GradeEntry extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationGroup = 'Academic';
+    protected static ?string $navigationGroup = 'Scolarité';
 
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
 

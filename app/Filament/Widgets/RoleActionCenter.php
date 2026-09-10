@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AbsenceWorklist;
+use App\Filament\Pages\CollectionCenter;
 use App\Filament\Pages\GradeEntry;
-use App\Filament\Resources\GradeResource;
+use App\Filament\Pages\MissingGrades;
 use App\Filament\Resources\PaymentResource;
 use App\Filament\Resources\ReportCardResource;
 use App\Models\Assessment;
@@ -19,6 +21,11 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class RoleActionCenter extends StatsOverviewWidget
 {
     protected static ?int $sort = -2;
+
+    public static function canView(): bool
+    {
+        return auth()->user()?->isSuperAdmin() !== true;
+    }
 
     protected function getStats(): array
     {
@@ -52,7 +59,7 @@ class RoleActionCenter extends StatsOverviewWidget
                 Stat::make('Évaluations sans notes', $missingGrades)
                     ->description('Compléter les évaluations')
                     ->color($missingGrades ? 'warning' : 'success')
-                    ->url(GradeResource::getUrl()),
+                    ->url(MissingGrades::getUrl()),
             ];
         }
 
@@ -70,11 +77,11 @@ class RoleActionCenter extends StatsOverviewWidget
                     ->url(PaymentResource::getUrl()),
                 Stat::make('Reste à recouvrer', number_format($outstanding, 0, ',', ' ').' FCFA')
                     ->color($outstanding ? 'warning' : 'success')
-                    ->url(url('/api/payments/debtors')),
+                    ->url(CollectionCenter::getUrl()),
                 Stat::make('Impayés vieillissants', $overdue)
                     ->description('Factures en retard')
                     ->color($overdue ? 'danger' : 'success')
-                    ->url(url('/api/payments/report?type=debtors')),
+                    ->url(CollectionCenter::getUrl(['status' => Invoice::OVERDUE])),
             ];
         }
 
@@ -86,7 +93,7 @@ class RoleActionCenter extends StatsOverviewWidget
         return [
             Stat::make('Absences à traiter', $absences)
                 ->color($absences ? 'danger' : 'success')
-                ->url(url('/api/attendance/history')),
+                ->url(AbsenceWorklist::getUrl()),
             Stat::make('Notes manquantes', $missingGrades)
                 ->color($missingGrades ? 'warning' : 'success')
                 ->url(GradeEntry::getUrl()),

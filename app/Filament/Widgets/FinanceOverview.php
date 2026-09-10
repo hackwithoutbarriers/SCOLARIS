@@ -4,11 +4,15 @@ namespace App\Filament\Widgets;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Support\DashboardPeriod;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class FinanceOverview extends BaseWidget
 {
+    use InteractsWithPageFilters;
+
     public static function canView(): bool
     {
         return auth()->user()?->isFinanceOperator() ?? false;
@@ -16,8 +20,9 @@ class FinanceOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $expected = (int) Invoice::query()->whereNotIn('status', [Invoice::CANCELLED])->sum('total_amount');
-        $collected = (int) Payment::query()->where('status', Payment::CONFIRMED)->sum('amount');
+        $period = DashboardPeriod::resolve($this->filters['period'] ?? null, $this->filters['from'] ?? null, $this->filters['to'] ?? null);
+        $expected = (int) Invoice::query()->whereNotIn('status', [Invoice::CANCELLED])->whereBetween('created_at', [$period['from'], $period['to']])->sum('total_amount');
+        $collected = (int) Payment::query()->where('status', Payment::CONFIRMED)->whereBetween('paid_at', [$period['from'], $period['to']])->sum('amount');
         $outstanding = max(0, $expected - $collected);
 
         return [
