@@ -9,6 +9,14 @@ php artisan storage:link --force
 php artisan migrate --force
 php artisan optimize
 
+if [ -n "${SCOLARIS_OWNER_EMAIL:-}" ] || [ -n "${SCOLARIS_OWNER_PASSWORD:-}" ]; then
+    if [ -z "${SCOLARIS_OWNER_EMAIL:-}" ] || [ -z "${SCOLARIS_OWNER_PASSWORD:-}" ]; then
+        echo "SCOLARIS_OWNER_EMAIL and SCOLARIS_OWNER_PASSWORD must both be configured." >&2
+        exit 1
+    fi
+    php artisan scolaris:create-super-admin --no-interaction
+fi
+
 if [ "$#" -gt 0 ]; then
     exec "$@"
 fi
