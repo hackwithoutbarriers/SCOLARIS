@@ -24,10 +24,10 @@ class AcademicController extends Controller
 
     public function storeGrade(Request $request, Assessment $assessment, GradeCalculationService $calculator): JsonResponse
     {
-        $data = $request->validate(['student_id' => ['required', 'integer'], 'score' => ['required', 'numeric'], 'remarks' => ['nullable', 'string']]);
+        $data = $request->validate(['student_id' => ['required', 'integer'], 'score' => ['required', 'numeric'], 'remarks' => ['nullable', 'string'], 'client_operation_id' => ['nullable', 'uuid']]);
         $student = Student::findOrFail($data['student_id']);
         abort_unless($request->user()->can('manageGrades', [$assessment, $student]), 403);
-        $grade = $calculator->saveGrade($assessment, $student, $data['score'], ['remarks' => $data['remarks'] ?? null]);
+        $grade = $calculator->saveGrade($assessment, $student, $data['score'], ['remarks' => $data['remarks'] ?? null, 'client_operation_id' => $data['client_operation_id'] ?? null]);
 
         return response()->json($grade->load('assessment', 'student'), 201);
     }

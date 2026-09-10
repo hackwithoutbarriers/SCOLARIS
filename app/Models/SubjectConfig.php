@@ -15,7 +15,7 @@ class SubjectConfig extends Model
     use Auditable, BelongsToSchool, HasFactory;
 
     protected $fillable = [
-        'school_id', 'subject_id', 'academic_year_id', 'class_room_id', 'version',
+        'school_id', 'subject_id', 'academic_year_id', 'class_room_id', 'cycle', 'filiere', 'version',
         'grading_method', 'passing_score', 'max_score', 'weight', 'rules', 'active',
     ];
 
@@ -54,6 +54,35 @@ class SubjectConfig extends Model
     public function classRoom(): BelongsTo
     {
         return $this->belongsTo(ClassRoom::class);
+    }
+
+    /**
+     * Resolve the most specific active configuration without breaking legacy
+     * class-less configurations.
+     */
+    public static function resolveFor(Subject $subject, AcademicYear $year, ?ClassRoom $classRoom = null): ?self
+    {
+        return static::query()
+            ->where('subject_id', $subject->id)
+            ->where('academic_year_id', $year->id)
+            ->where('active', true)
+            ->when($classRoom, fn ($query) => $query->where(function ($scope) use ($classRoom): void {
+                $scope->where('class_room_id', $classRoom->id)
+                    ->orWhere(function ($track) use ($classRoom): void {
+                        $track->whereNull('class_room_id')
+                            ->where(function ($tracks) use ($classRoom): void {
+                                $tracks->where('cycle', $classRoom->cycle)
+                                    ->orWhereNull('cycle');
+                            })
+                            ->where(function ($tracks) use ($classRoom): void {
+                                $tracks->where('filiere', $classRoom->filiere)
+                                    ->orWhereNull('filiere');
+                            });
+                    });
+            }), fn ($query) => $query->whereNull('class_room_id')->whereNull('cycle')->whereNull('filiere'))
+            ->orderByRaw('CASE WHEN class_room_id IS NOT NULL THEN 3 WHEN filiere IS NOT NULL THEN 2 WHEN cycle IS NOT NULL THEN 1 ELSE 0 END DESC')
+            ->latest('version')
+            ->first();
     }
 
     public function assessments(): HasMany

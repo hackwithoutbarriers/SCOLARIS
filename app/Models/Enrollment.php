@@ -14,11 +14,11 @@ class Enrollment extends Model
 {
     use Auditable, BelongsToSchool, HasFactory;
 
-    protected $fillable = ['school_id', 'student_id', 'class_room_id', 'academic_year_id', 'enrollment_date', 'enrolled_at', 'status'];
+    protected $fillable = ['school_id', 'student_id', 'class_room_id', 'academic_year_id', 'enrollment_date', 'enrolled_at', 'status', 'optional_fee_types'];
 
     protected function casts(): array
     {
-        return ['enrollment_date' => 'date', 'enrolled_at' => 'date'];
+        return ['enrollment_date' => 'date', 'enrolled_at' => 'date', 'optional_fee_types' => 'array'];
     }
 
     public function student(): BelongsTo

@@ -18,11 +18,12 @@ class ReportCard extends Model
     protected $fillable = [
         'school_id', 'student_id', 'academic_year_id', 'term_id', 'template_id',
         'version', 'status', 'data', 'generated_by', 'generated_at',
+        'mention_override', 'mention_override_reason', 'mention_override_by', 'mention_override_at',
     ];
 
     protected function casts(): array
     {
-        return ['data' => 'array', 'generated_at' => 'datetime'];
+        return ['data' => 'array', 'generated_at' => 'datetime', 'mention_override_at' => 'datetime'];
     }
 
     protected static function booted(): void
@@ -31,7 +32,13 @@ class ReportCard extends Model
             if ($card->exists && $card->getOriginal('status') === 'published' && $card->isDirty(['data', 'student_id', 'academic_year_id', 'term_id', 'template_id'])) {
                 throw ValidationException::withMessages(['status' => 'Published report cards are immutable; create a revision instead.']);
             }
-            if (! in_array($card->status, ['draft', 'review', 'approved', 'published', 'revision_requested'], true)) {
+            if ($card->exists && $card->isDirty(['mention_override', 'mention_override_reason', 'mention_override_by', 'mention_override_at'])) {
+                $closed = $card->term_id && Term::query()->whereKey($card->term_id)->where('status', 'closed')->exists();
+                if ($card->getOriginal('status') === 'published' || $closed) {
+                    throw ValidationException::withMessages(['mention' => 'La mention ne peut plus être modifiée après publication ou clôture.']);
+                }
+            }
+            if (! in_array($card->status, ['draft', 'review', 'conseil_de_classe', 'approved', 'published', 'revision_requested'], true)) {
                 throw ValidationException::withMessages(['status' => 'Le statut du bulletin n’est pas pris en charge.']);
             }
         });
@@ -65,6 +72,11 @@ class ReportCard extends Model
     public function generatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');
+    }
+
+    public function mentionOverrideBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'mention_override_by');
     }
 
     public function normalizedData(): ?ReportCardData

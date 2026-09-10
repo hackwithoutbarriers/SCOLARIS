@@ -32,7 +32,11 @@ final class AppreciationService
             $lastAverage = $row['average'];
             $result[] = DB::transaction(fn () => Appreciation::withoutGlobalScopes()->updateOrCreate(
                 ['school_id' => $schoolId, 'student_id' => $row['student']->id, 'academic_year_id' => $year->id, 'term_id' => $term?->id],
-                ['average_score' => $row['average'], 'rank' => $rank, 'label' => $this->calculator->appreciationFor($row['average'])],
+                [
+                    'average_score' => $row['average'],
+                    'rank' => $rank,
+                    'label' => $this->calculator->mentionFor($row['student'], $year, $row['average'])['label'] ?? null,
+                ],
             ));
         }
         return $result;

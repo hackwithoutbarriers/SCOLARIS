@@ -11,11 +11,11 @@ class School extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'slug', 'timezone', 'email', 'phone', 'address', 'city', 'country', 'logo_path', 'active'];
+    protected $fillable = ['name', 'code', 'slug', 'timezone', 'email', 'phone', 'address', 'city', 'country', 'logo_path', 'active', 'due_reminder_days', 'due_reminders_enabled', 'single_operator_mode', 'expense_categories'];
 
     protected function casts(): array
     {
-        return ['active' => 'boolean'];
+        return ['active' => 'boolean', 'due_reminder_days' => 'integer', 'due_reminders_enabled' => 'boolean', 'single_operator_mode' => 'boolean', 'expense_categories' => 'array'];
     }
 
     protected static function booted(): void
@@ -23,6 +23,14 @@ class School extends Model
         static::creating(function (self $school): void {
             $school->slug ??= str()->slug($school->name);
             $school->country ??= 'Togo';
+        });
+        static::created(function (self $school): void {
+            foreach (ConductLabel::defaults() as $sortOrder => $label) {
+                $school->conductLabels()->firstOrCreate(
+                    ['label' => $label],
+                    ['sort_order' => $sortOrder, 'active' => true],
+                );
+            }
         });
     }
 
@@ -76,9 +84,29 @@ class School extends Model
         return $this->hasMany(ReportCardTemplate::class);
     }
 
+    public function timetableSlots(): HasMany
+    {
+        return $this->hasMany(TimetableSlot::class);
+    }
+
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
     public function reportCards(): HasMany
     {
         return $this->hasMany(ReportCard::class);
+    }
+
+    public function conductLabels(): HasMany
+    {
+        return $this->hasMany(ConductLabel::class);
+    }
+
+    public function mentionThresholds(): HasMany
+    {
+        return $this->hasMany(MentionThreshold::class);
     }
 
     public function invoices(): HasMany

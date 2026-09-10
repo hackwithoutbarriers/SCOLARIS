@@ -26,7 +26,14 @@ class InvoiceService
                 return $existing->load('items');
             }
 
-            $fees = $structure->fees->where('active', true);
+            $enrollment = $student->enrollments()
+                ->where('academic_year_id', $structure->academic_year_id)
+                ->where('status', 'active')
+                ->latest('id')
+                ->first();
+            $optionalTypes = $enrollment?->optional_fee_types ?? [];
+            $fees = $structure->fees->filter(fn ($fee): bool => $fee->active
+                && ($fee->mandatory || in_array($fee->type, $optionalTypes, true)));
             abort_unless($fees->isNotEmpty(), 422, 'La grille tarifaire ne contient aucun frais actif.');
             $total = (int) $fees->sum('amount');
             $dueDate = $fees->filter(fn ($fee) => $fee->due_date !== null)->min('due_date') ?: today();

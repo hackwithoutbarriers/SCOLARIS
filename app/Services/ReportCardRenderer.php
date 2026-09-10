@@ -30,7 +30,7 @@ final class ReportCardRenderer
         $customHeader = e((string) ($schema['header']['custom_text'] ?? ''));
         $customFooter = e((string) ($schema['footer']['custom_text'] ?? ''));
         $showAttendance = (bool) ($schema['summary']['show_attendance'] ?? $schema['summary']['absences'] ?? false);
-        $attendance = $data['attendance_summary'] ?? $data['attendance'] ?? [];
+        $attendance = array_merge($data['attendance_summary'] ?? [], $data['attendance'] ?? []);
         return '<!doctype html><html><head><meta charset="utf-8"><title>'.$title.'</title><style>'
             .'@page{size:'.e($orientation).';margin:'.(int) ($schema['page']['margins']['top'] ?? 12).'mm '.(int) ($schema['page']['margins']['right'] ?? 12).'mm '.(int) ($schema['page']['margins']['bottom'] ?? 12).'mm '.(int) ($schema['page']['margins']['left'] ?? 12).'mm}'
             .'body{font-family:'.$font.',sans-serif;color:#0F172A;font-size:'.(int) ($styles['font_size'] ?? 10).'pt}h1{color:'.$primary.';text-align:center}.logo{max-height:70px;max-width:160px}table{width:100%;border-collapse:collapse;margin-top:18px}th{background:'.$primary.';color:#fff}th,td{border:1px solid #cbd5e1;padding:6px;text-align:left}.meta{margin:8px 0 16px}.footer{margin-top:24px}</style></head><body>'
@@ -38,15 +38,32 @@ final class ReportCardRenderer
             .'<section class="meta"><strong>Élève :</strong> '.e($student['name'] ?? '').' &nbsp; <strong>N° :</strong> '.e($student['student_number'] ?? '').'<br><strong>Période :</strong> '.e($data['period']['term'] ?? '').' &nbsp; <strong>Classe :</strong> '.e($data['class']['name'] ?? '').'</section>'
             .'<table><thead><tr>'.$head.'</tr></thead><tbody>'.$rows.'</tbody></table>'
             .'<p><strong>Moyenne générale :</strong> '.e(number_format((float) ($data['summary']['average'] ?? 0), 2)).' %</p>'
-            .($showAttendance ? '<p><strong>Présences :</strong> '.e((string) ($attendance['days_present'] ?? 0)).' | <strong>Absences :</strong> '.e((string) ($attendance['days_absent'] ?? 0)).' | <strong>Retards :</strong> '.e((string) ($attendance['days_late'] ?? 0)).' | <strong>Excusés :</strong> '.e((string) ($attendance['days_excused'] ?? 0)).' | <strong>Total :</strong> '.e((string) ($attendance['total_days'] ?? 0)).'</p>' : '')
-            .'<p><strong>Appréciation :</strong> '.e($data['appreciation']['label'] ?? '').'</p><footer class="footer">'.$customFooter.'</footer></body></html>';
+            .($showAttendance ? '<p><strong>Présences :</strong> '.e((string) ($attendance['days_present'] ?? 0)).' | <strong>Absences :</strong> '.e((string) ($attendance['total_absences'] ?? $attendance['days_absent'] ?? 0)).' | <strong>Absences justifiées :</strong> '.e((string) ($attendance['absences_justifiees'] ?? $attendance['days_excused'] ?? 0)).' | <strong>Absences non justifiées :</strong> '.e((string) ($attendance['absences_non_justifiees'] ?? $attendance['days_absent'] ?? 0)).' | <strong>Retards :</strong> '.e((string) ($attendance['total_retards'] ?? $attendance['days_late'] ?? 0)).' | <strong>Total :</strong> '.e((string) ($attendance['total_days'] ?? 0)).'</p>' : '')
+            .'<p><strong>Appréciation :</strong> '.e($data['appreciation']['label'] ?? '').'</p>'
+            .(!empty($data['academic_mention']['label']) ? '<p><strong>Mention académique :</strong> '.e($data['academic_mention']['label']).'</p>' : '')
+            .(!empty($data['conduct']['label']) ? '<p><strong>Conduite :</strong> '.e($data['conduct']['label']).(!empty($data['conduct']['comment']) ? ' — '.e($data['conduct']['comment']) : '').'</p>' : '')
+            .'<footer class="footer">'.$customFooter.'</footer></body></html>';
     }
 
     public function pdf(ReportCard $card): mixed
     {
+        return $this->pdfHtml($this->renderHtml($card));
+    }
+
+    public function renderDocument(array $data, array $schema, string $number = ''): string
+    {
+        $title = $schema['styles']['title'] ?? ($data['document_type'] === 'attestation' ? 'Attestation' : 'Certificat');
+        $school = $data['school_identity'] ?? [];
+        $student = $data['student_identity'] ?? [];
+        $custom = $schema['body']['custom_text'] ?? $schema['header']['custom_text'] ?? '';
+        return '<!doctype html><html><head><meta charset="utf-8"><title>'.e($title).'</title><style>body{font-family:'.e($schema['styles']['font_family'] ?? 'DejaVu Sans').';padding:30px;color:#0F172A}h1{text-align:center;color:'.e($schema['styles']['primary_color'] ?? '#1E3A8A').'}main{text-align:center;margin-top:80px;font-size:16px}.number{font-weight:bold}</style></head><body><header><h1>'.e($title).'</h1><div>'.e($school['name'] ?? '').'</div></header><main><p>'.e($custom).'</p><p>Nous certifions que <strong>'.e($student['name'] ?? '').'</strong> (N° '.e($student['student_number'] ?? '').') est inscrit(e) dans notre établissement.</p><p class="number">Référence : '.e($number).'</p></main><footer>'.e($schema['footer']['custom_text'] ?? '').'</footer></body></html>';
+    }
+
+    public function pdfHtml(string $html): mixed
+    {
         if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
             throw new RuntimeException('PDF generation requires barryvdh/laravel-dompdf. HTML rendering is available.');
         }
-        return \Barryvdh\DomPDF\Facade\Pdf::loadHTML($this->renderHtml($card));
+        return \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
     }
 }

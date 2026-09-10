@@ -16,7 +16,7 @@ class NotificationService {
         $attributes = [
             'school_id'=>$student->school_id,'student_id'=>$student->id,'guardian_id'=>$guardian->id,
             'event'=>$event,'template'=>strtolower($event), 'recipient'=>$guardian->phone,
-            'payload'=>json_encode($payload, JSON_THROW_ON_ERROR),'provider'=>config('attendance.notifications.provider','mock'),'channel'=>'sms',
+            'payload'=>json_encode($payload, JSON_THROW_ON_ERROR),'provider'=>config('attendance.notifications.provider','mock'),'channel'=>config('attendance.notifications.default_channel', 'whatsapp'),
             'status'=>'PENDING','scheduled_at'=>now(),
         ];
         NotificationQueue::insertOrIgnore(array_merge($attributes, [
@@ -27,9 +27,12 @@ class NotificationService {
         return NotificationQueue::where('idempotency_key', $key)->first();
     }
 
-    public function queueFinancial(Student $student, Invoice $invoice, string $event, string $channel = 'sms', array $payload = []): ?NotificationQueue
+    public function queueFinancial(Student $student, Invoice $invoice, string $event, ?string $channel = null, array $payload = []): ?NotificationQueue
     {
-        $guardian = $student->guardians()->wherePivot('receives_sms', true)->where('guardians.active', true)->first();
+        $channel ??= config('attendance.notifications.default_channel', 'whatsapp');
+        $preference = $channel === 'whatsapp' ? 'receives_whatsapp' : 'receives_sms';
+        $guardian = $student->guardians()->wherePivot($preference, true)->where('guardians.active', true)->first()
+            ?? $student->guardians()->wherePivot('receives_sms', true)->where('guardians.active', true)->first();
         if (!$guardian) return null;
         $period = $event === 'payment_received' && isset($payload['payment_id'])
             ? 'payment-'.$payload['payment_id']

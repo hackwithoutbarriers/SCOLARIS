@@ -8,6 +8,7 @@ use App\Models\PaymentAllocation;
 use App\Models\PaymentReversal;
 use App\Models\PaymentTransaction;
 use App\Models\Receipt;
+use App\Models\ReceiptSequence;
 use App\Services\NotificationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,15 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
+    public function handlerFor(string $method): PaymentMethodHandler
+    {
+        return match ($method) {
+            'CASH' => app(CashPaymentHandler::class),
+            'BANK', 'TMONEY', 'FLOOZ', 'OTHER' => app(LegacyPaymentMethodHandler::class),
+            default => throw ValidationException::withMessages(['payment_method' => 'Mode de paiement invalide.']),
+        };
+    }
+
     public function recordManual(array $data): Payment
     {
         try {
@@ -60,6 +70,7 @@ class PaymentService
                 throw ValidationException::withMessages(['status' => 'Ce paiement ne peut pas être confirmé.']);
             }
 
+            $payment = $this->handlerFor($payment->payment_method)->confirm($payment);
             $payment->update(['status' => Payment::CONFIRMED, 'paid_at' => $payment->paid_at ?? now()]);
             $remaining = (int) $payment->amount;
             $invoices = Invoice::query()
@@ -88,16 +99,30 @@ class PaymentService
             $balance = (int) Invoice::query()->where('student_id', $payment->student_id)
                 ->whereNotIn('status', [Invoice::CANCELLED])->get()
                 ->sum(fn (Invoice $invoice): int => $invoice->balance());
+            ReceiptSequence::query()->insertOrIgnore([
+                'school_id' => $payment->school_id,
+                'sequence_type' => 'receipt',
+                'next_number' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $sequence = ReceiptSequence::query()
+                ->where('school_id', $payment->school_id)
+                ->where('sequence_type', 'receipt')
+                ->lockForUpdate()
+                ->firstOrFail();
+            $number = (int) $sequence->next_number;
+            $sequence->increment('next_number');
             $receipt = Receipt::firstOrCreate(
                 ['payment_id' => $payment->id],
-                ['school_id' => $payment->school_id, 'number' => 'REC-'.now()->format('Ym').'-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT), 'balance_after' => $balance]
+                ['school_id' => $payment->school_id, 'number' => 'REC-'.str_pad((string) $number, 6, '0', STR_PAD_LEFT), 'balance_after' => $balance]
             );
             if ($receipt->balance_after !== $balance) {
                 $receipt->update(['balance_after' => $balance]);
             }
             $payment->load('student', 'allocations.invoice');
             foreach ($payment->allocations as $allocation) {
-                app(NotificationService::class)->queueFinancial($payment->student, $allocation->invoice, 'payment_received', 'sms', [
+                app(NotificationService::class)->queueFinancial($payment->student, $allocation->invoice, 'payment_received', null, [
                     'amount' => $allocation->amount,
                     'balance' => $allocation->invoice->balance(),
                     'reference' => $payment->reference,

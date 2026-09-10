@@ -27,7 +27,7 @@ class CollectionService
                 ]);
                 if ($inserted > 0) {
                     $created += $inserted;
-                    $this->notifications->queueFinancial($invoice->student, $invoice, $type === 'CRITICAL' ? 'payment_overdue' : 'payment_reminder', 'sms', [
+                    $this->notifications->queueFinancial($invoice->student, $invoice, $type === 'CRITICAL' ? 'payment_overdue' : 'payment_reminder', null, [
                         'amount' => $invoice->total_amount,
                         'balance' => $invoice->balance(),
                         'due_date' => $invoice->due_date->toDateString(),

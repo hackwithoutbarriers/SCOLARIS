@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ClassRoom extends Model
 {
     use HasFactory, BelongsToSchool, Auditable;
-    protected $fillable = ['school_id', 'academic_year_id', 'name', 'grade_level', 'capacity'];
+    protected $fillable = ['school_id', 'academic_year_id', 'name', 'grade_level', 'cycle', 'filiere', 'capacity'];
     public function academicYear(): BelongsTo { return $this->belongsTo(AcademicYear::class); }
     public function enrollments(): HasMany { return $this->hasMany(Enrollment::class); }
     public function teacherAssignments(): HasMany { return $this->hasMany(TeacherAssignment::class); }

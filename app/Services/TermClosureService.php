@@ -18,7 +18,7 @@ final class TermClosureService
         }
 
         $pending = $term->reportCards()
-            ->whereIn('status', ['draft', 'review', 'revision_requested'])
+            ->whereIn('status', ['draft', 'review', 'conseil_de_classe', 'revision_requested'])
             ->count();
 
         if ($pending > 0) {

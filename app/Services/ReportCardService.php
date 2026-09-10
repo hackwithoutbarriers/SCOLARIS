@@ -7,6 +7,7 @@ use App\Models\AttendanceRecord;
 use App\Models\ReportCard;
 use App\Models\ReportCardTemplate;
 use App\Models\ReportCardVersion;
+use App\Models\ConductLabel;
 use App\Models\Student;
 use App\Models\Term;
 use App\Support\Academic\ReportCardData;
@@ -18,21 +19,29 @@ final class ReportCardService
 {
     public function __construct(private readonly GradeCalculationService $calculator) {}
 
-    public function generate(Student $student, AcademicYear $year, ?Term $term = null, ?ReportCardTemplate $template = null): ReportCard
+    public function generate(Student $student, AcademicYear $year, ?Term $term = null, ?ReportCardTemplate $template = null, ?array $conduct = null): ReportCard
     {
         if ($student->school_id !== $year->school_id || ($term && $term->school_id !== $student->school_id) || ($template && $template->school_id !== $student->school_id)) {
             throw ValidationException::withMessages(['school' => 'Les éléments du bulletin doivent appartenir à la même école.']);
         }
         $payload = $this->calculator->calculate($student, $term);
+        if ($term === null) {
+            $payload['academic_mention'] = $this->calculator->mentionFor($student, $year, (float) ($payload['summary']['average'] ?? 0));
+            $payload['summary']['academic_mention'] = $payload['academic_mention'];
+        }
         $attendance = $this->attendanceSummary($student, $year, $term);
         $school = $student->school;
         $enrollment = $student->enrollments()->where('academic_year_id', $year->id)->latest('id')->first();
+        $ranking = $this->calculator->rankings($student, $term);
         $data = ReportCardData::fromArray(array_merge($payload, [
             'school_identity' => $school ? ['id' => $school->id, 'name' => $school->name, 'address' => $school->address, 'phone' => $school->phone, 'logo_path' => $school->logo_path] : [],
-            'class' => $enrollment?->classRoom ? ['id' => $enrollment->classRoom->id, 'name' => $enrollment->classRoom->name, 'grade_level' => $enrollment->classRoom->grade_level] : [],
+            'class' => $enrollment?->classRoom ? ['id' => $enrollment->classRoom->id, 'name' => $enrollment->classRoom->name, 'grade_level' => $enrollment->classRoom->grade_level, 'cycle' => $enrollment->classRoom->cycle, 'filiere' => $enrollment->classRoom->filiere] : [],
             'period' => array_merge($payload['period'], ['academic_year_id' => $year->id, 'academic_year' => $year->name]),
-            'appreciation' => array_merge($payload['appreciation'], ['rank' => $this->calculator->rank($student, $term)]),
-            'ranking' => ['rank' => $this->calculator->rank($student, $term)],
+            'appreciation' => array_merge($payload['appreciation'], ['rank' => $ranking['rank']]),
+            'ranking' => $ranking,
+            'academic_mention' => $payload['academic_mention'] ?? [],
+            'conduct' => $conduct ?? [],
+            'attendance' => $this->withAttendanceTotals($attendance),
             'attendance_summary' => $attendance,
         ]));
 
@@ -65,13 +74,32 @@ final class ReportCardService
         Gate::authorize('update', $card);
         abort_unless(auth()->user()->isDirector(), 403);
 
-        return $this->transition($card, 'review', 'approved');
+        return $this->transition($card, 'conseil_de_classe', 'approved');
+    }
+
+    public function submitToClassCouncil(ReportCard $card): ReportCard
+    {
+        Gate::authorize('update', $card);
+        abort_unless(auth()->user()->isDirector(), 403);
+
+        return $this->transition($card, 'review', 'conseil_de_classe');
     }
 
     public function publish(ReportCard $card): ReportCard
     {
         Gate::authorize('update', $card);
         abort_unless(auth()->user()->isDirector(), 403);
+
+        $ranking = $this->calculator->rankings($card->student, $card->term);
+        if ($ranking['provisional'] === true) {
+            throw ValidationException::withMessages(['ranking' => 'Le classement reste provisoire tant que le contrôle des notes n’est pas validé.']);
+        }
+        $data = $card->normalizedData()?->toArray() ?? [];
+        if (($data['ranking'] ?? []) !== $ranking) {
+            $data['ranking'] = $ranking;
+            $data['appreciation'] = array_merge($data['appreciation'] ?? [], ['rank' => $ranking['rank']]);
+            $card->update(['data' => $data]);
+        }
 
         return $this->transition($card, 'approved', 'published');
     }
@@ -106,6 +134,86 @@ final class ReportCardService
             'days_excused' => $records->where('status', 'EXCUSED')->count(),
             'total_days' => $records->count(),
         ];
+    }
+
+    private function withAttendanceTotals(array $attendance): array
+    {
+        $justified = (int) ($attendance['days_excused'] ?? 0);
+        $unjustified = (int) ($attendance['days_absent'] ?? 0);
+
+        return array_merge($attendance, [
+            'total_absences' => $justified + $unjustified,
+            'absences_justifiees' => $justified,
+            'absences_non_justifiees' => $unjustified,
+            'total_retards' => (int) ($attendance['days_late'] ?? 0),
+        ]);
+    }
+
+    public function overrideAcademicMention(ReportCard $card, string $mention, string $reason): ReportCard
+    {
+        Gate::authorize('update', $card);
+        abort_unless(auth()->user()->isDirector(), 403);
+        if ($card->status === 'published' || $card->term?->isClosed()) {
+            throw ValidationException::withMessages(['mention' => 'La mention ne peut plus être modifiée après publication ou clôture.']);
+        }
+        if (trim($reason) === '') {
+            throw ValidationException::withMessages(['reason' => 'Le motif de la dérogation est obligatoire.']);
+        }
+
+        $data = $card->normalizedData()?->toArray() ?? [];
+        $data['academic_mention'] = [
+            'label' => $mention,
+            'overridden' => true,
+            'override_reason' => $reason,
+            'override_by' => auth()->id(),
+            'override_at' => now()->toIso8601String(),
+        ];
+        $card->update([
+            'data' => $data,
+            'mention_override' => $mention,
+            'mention_override_reason' => $reason,
+            'mention_override_by' => auth()->id(),
+            'mention_override_at' => now(),
+        ]);
+        $this->snapshot($card);
+
+        return $card->refresh();
+    }
+
+    public function setConduct(ReportCard $card, string $label, ?string $comment = null): ReportCard
+    {
+        Gate::authorize('update', $card);
+        abort_unless(auth()->user()->isDirector(), 403);
+        if ($card->status === 'published' || $card->term?->isClosed()) {
+            throw ValidationException::withMessages(['conduct' => 'La conduite ne peut plus être modifiée après publication ou clôture.']);
+        }
+        if (! ConductLabel::query()->where('school_id', $card->school_id)->where('label', $label)->where('active', true)->exists()) {
+            throw ValidationException::withMessages(['conduct' => 'Ce libellé de conduite n’est pas configuré pour l’école.']);
+        }
+        $data = $card->normalizedData()?->toArray() ?? [];
+        $data['conduct'] = array_filter(['label' => $label, 'comment' => $comment], static fn ($value): bool => $value !== null && $value !== '');
+        $card->update(['data' => $data]);
+        $this->snapshot($card);
+
+        return $card->refresh();
+    }
+
+    /**
+     * A correction invalidates every non-published ranking in the period, not
+     * only the bulletin of the learner whose grade was edited.
+     */
+    public function refreshDraftRankings(Term $term): void
+    {
+        ReportCard::query()->where('term_id', $term->id)
+            ->whereIn('status', ['draft', 'review', 'approved', 'revision_requested'])
+            ->get()->each(function (ReportCard $card): void {
+                $ranking = $this->calculator->rankings($card->student, $card->term);
+                $data = $card->normalizedData()?->toArray() ?? [];
+                $data['ranking'] = $ranking;
+                $data['appreciation'] = array_merge($data['appreciation'] ?? [], ['rank' => $ranking['rank']]);
+                $card->update(['data' => $data]);
+                $this->snapshot($card);
+            });
     }
 
     public function snapshot(ReportCard $card): ReportCardVersion

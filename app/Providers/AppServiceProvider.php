@@ -17,10 +17,13 @@ use App\Models\Appreciation;
 use App\Models\ReportCardTemplate;
 use App\Models\ReportCard;
 use App\Models\ReportCardVersion;
+use App\Models\Expense;
+use App\Models\TimetableSlot;
+use App\Models\Certificate;
 use App\Models\EvaluationRuleSet;
 use App\Policies\SchoolResourcePolicy;
 use App\Support\Tenancy\SchoolContext;
-use App\Services\{HttpNotificationProvider, MockNotificationProvider, NotificationProvider};
+use App\Services\{HttpNotificationProvider, MockNotificationProvider, NotificationProvider, WhatsAppNotificationProvider};
 use App\Services\Payments\{FakePaymentGateway, ManualPaymentGateway, PaymentGatewayInterface};
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -36,9 +39,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(SchoolContext::class);
         $this->app->bind(NotificationProvider::class, function () {
-            return config('attendance.notifications.provider') === 'http'
+            return config('attendance.notifications.default_channel') === 'whatsapp'
+                && filled(config('services.twilio.sid'))
+                ? app(WhatsAppNotificationProvider::class)
+                : (config('attendance.notifications.provider') === 'http'
                 ? app(HttpNotificationProvider::class)
-                : app(MockNotificationProvider::class);
+                : app(MockNotificationProvider::class));
         });
         $this->app->bind(PaymentGatewayInterface::class, function () {
             return config('payments.gateway', 'manual') === 'fake'
@@ -63,6 +69,9 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::before(fn ($user) => $user->isSuperAdmin() ? true : null);
         Gate::policy(\App\Models\Payment::class, \App\Policies\PaymentPolicy::class);
+        Gate::policy(Expense::class, \App\Policies\ExpensePolicy::class);
+        Gate::policy(TimetableSlot::class, \App\Policies\TimetableSlotPolicy::class);
+        Gate::policy(Certificate::class, SchoolResourcePolicy::class);
         Gate::policy(\App\Models\School::class, \App\Policies\SchoolPolicy::class);
         foreach ([AcademicYear::class, ClassRoom::class, Enrollment::class, Guardian::class, Student::class, Subject::class, Term::class, TeacherAssignment::class, SubjectConfig::class, EvaluationRuleSet::class, Assessment::class, Grade::class, Appreciation::class, ReportCardTemplate::class, ReportCard::class, ReportCardVersion::class, \App\Models\AttendanceSession::class, \App\Models\AttendanceRecord::class] as $model) {
             Gate::policy($model, SchoolResourcePolicy::class);

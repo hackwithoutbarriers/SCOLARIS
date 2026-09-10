@@ -15,7 +15,8 @@ class PaymentController extends Controller
     public function store(Request $request, PaymentService $service): JsonResponse
     {
         abort_unless($request->user()->isFinanceOperator(), 403);
-        abort_unless($request->header('Idempotency-Key'), 400, 'Idempotency-Key requis.');
+        $idempotencyKey = $request->header('Idempotency-Key') ?: $request->input('client_operation_id');
+        abort_unless($idempotencyKey, 400, 'Idempotency-Key requis.');
         $data = $request->validate([
             'student_id' => ['required', 'integer', 'exists:students,id'],
             'amount' => ['required', 'integer', 'min:1'],
@@ -23,11 +24,12 @@ class PaymentController extends Controller
             'payment_method' => ['required', Rule::in(['CASH', 'BANK', 'TMONEY', 'FLOOZ', 'OTHER'])],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string'],
+            'client_operation_id' => ['nullable', 'uuid'],
         ]);
         $student = \App\Models\Student::query()->findOrFail($data['student_id']);
         abort_unless($student->school_id === $request->user()->school_id, 403);
         $data['school_id'] = $student->school_id;
-        $data['idempotency_key'] = $request->header('Idempotency-Key');
+        $data['idempotency_key'] = $idempotencyKey;
         return response()->json($service->recordManual($data)->load('receipt'), 201);
     }
 
@@ -87,8 +89,18 @@ class PaymentController extends Controller
                     foreach ($invoices as $invoice) fputcsv($handle, [$invoice->student->full_name, $invoice->classRoom?->name, $invoice->total_amount, $invoice->paidAmount(), $invoice->balance(), max(0, $invoice->due_date->diffInDays(today(), false))]);
                 });
             }
+
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function twilioWhatsappStatus(Request $request): JsonResponse
+    {
+        \Log::info('Twilio WhatsApp delivery status', $request->only([
+            'MessageSid', 'MessageStatus', 'To', 'ErrorCode', 'ErrorMessage',
+        ]));
+
+        return response()->json(['status' => 'ok']);
     }
 
     public function debtors(Request $request): JsonResponse

@@ -16,6 +16,7 @@ class Grade extends Model
     protected $fillable = [
         'school_id', 'assessment_id', 'student_id', 'graded_by', 'score',
         'normalized_score', 'grade_letter', 'remarks', 'validated_at',
+        'client_operation_id',
     ];
 
     protected function casts(): array
