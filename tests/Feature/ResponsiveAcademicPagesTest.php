@@ -17,6 +17,7 @@ class ResponsiveAcademicPagesTest extends TestCase
             $this->withHeader('Viewport-Width', (string) $viewport)
                 ->get('/admin/login')
                 ->assertOk()
+                ->assertSee('filament-admin-premium')
                 ->assertSee('Adresse e-mail')
                 ->assertSee('Mot de passe');
         }
