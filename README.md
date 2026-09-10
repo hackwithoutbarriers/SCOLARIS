@@ -148,20 +148,19 @@ SCOLARIS_OWNER_NAME="Votre Nom" # optionnel
 SCOLARIS_OWNER_PASSWORD="un-secret-d'au-moins-12-caracteres"
 ```
 
-Le démarrage Docker crée ou met à jour automatiquement ce compte, de façon
-idempotente, puis ouvrir `/admin/login`. Le mot de passe doit être enregistré
-comme secret Render et ne doit jamais être committé. Pour une réinitialisation
-ponctuelle depuis Shell, exécuter `php artisan scolaris:create-super-admin`
-après avoir défini ces variables. Ne pas utiliser `admin@example.com /
-password` en production.
+Après le déploiement, exécuter une seule fois depuis le Shell Render
+`php artisan scolaris:create-super-admin` après avoir défini ces variables.
+Le démarrage Docker n’exécute pas cette commande automatiquement afin de ne
+pas réinitialiser ou recréer un compte administrateur à chaque redémarrage.
+Le mot de passe doit être enregistré comme secret Render et ne doit jamais
+être committé. Ne pas utiliser `admin@example.com / password` en production.
 
 ### Demandes de comptes et sécurité
 
-Le formulaire public `/register` accepte uniquement les rôles Directeur,
-Enseignant et Comptable. Une demande de Directeur est visible et traitable
-uniquement par le SaaS owner. Une demande d'Enseignant ou de Comptable doit
-indiquer une école existante et est visible uniquement par le Directeur de
-cette école. Un compte n'est actif qu'après approbation; les demandes sont
+Le formulaire public `/register` accepte uniquement les demandes de Directeur.
+Le personnel est créé par invitation du Directeur ou du SaaS owner, avec un
+rôle principal et un rôle secondaire optionnel. Un compte n'est actif qu'après
+activation de l'invitation; les demandes sont
 limitées par IP, les emails sont normalisés et les mots de passe exigent au
 moins 12 caractères, majuscules, minuscules, chiffres, symbole et absence
 connue dans les fuites.

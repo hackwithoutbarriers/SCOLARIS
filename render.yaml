@@ -37,6 +37,34 @@ services:
         sync: false
       - key: DB_SSLMODE
         value: require
+      - key: NOTIFICATIONS_DEFAULT_CHANNEL
+        value: whatsapp
+      - key: ATTENDANCE_NOTIFICATION_PROVIDER
+        value: mock
+      - key: TWILIO_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: WHATSAPP_TEMPLATE_INVITATION
+        sync: false
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SCHEME
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: Scolaris
       - key: SESSION_DRIVER
         value: database
       - key: SESSION_SECURE_COOKIE
@@ -87,12 +115,40 @@ services:
         sync: false
       - key: DB_SSLMODE
         value: require
+      - key: NOTIFICATIONS_DEFAULT_CHANNEL
+        value: whatsapp
+      - key: ATTENDANCE_NOTIFICATION_PROVIDER
+        value: mock
+      - key: TWILIO_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: WHATSAPP_TEMPLATE_INVITATION
+        sync: false
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SCHEME
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: Scolaris
       - key: QUEUE_CONNECTION
         value: database
   - type: cron
     name: scolaris-scheduler
     runtime: docker
-    schedule: "0 5 * * *"
+    schedule: "* * * * *"
     dockerCommand: /usr/local/bin/run-scheduler.sh
     envVars:
       - key: APP_ENV
@@ -115,3 +171,31 @@ services:
         sync: false
       - key: DB_SSLMODE
         value: require
+      - key: NOTIFICATIONS_DEFAULT_CHANNEL
+        value: whatsapp
+      - key: ATTENDANCE_NOTIFICATION_PROVIDER
+        value: mock
+      - key: TWILIO_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: WHATSAPP_TEMPLATE_INVITATION
+        sync: false
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_SCHEME
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: Scolaris
