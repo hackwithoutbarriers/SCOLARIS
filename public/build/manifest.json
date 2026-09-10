@@ -1,11 +1,20 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-DKF2UeRj.css",
+    "file": "assets/app-CX96C7rI.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
     "names": [
       "app.css"
+    ]
+  },
+  "resources/css/filament-admin-premium.css": {
+    "file": "assets/filament-admin-premium-lWMTNzxn.css",
+    "src": "resources/css/filament-admin-premium.css",
+    "isEntry": true,
+    "name": "filament-admin-premium",
+    "names": [
+      "filament-admin-premium.css"
     ]
   },
   "resources/js/app.js": {
