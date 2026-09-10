@@ -17,7 +17,7 @@ class PaymentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static ?string $navigationGroup = 'Finance';
+    protected static ?string $navigationGroup = 'Finances';
 
     protected static ?string $navigationLabel = 'Paiements';
 
@@ -28,7 +28,7 @@ class PaymentResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('student_id')->options(fn () => Student::query()->orderBy('last_name')->get()->pluck('full_name', 'id'))->searchable()->required(),
             Forms\Components\TextInput::make('amount')->label('Montant')->numeric()->integer()->minValue(1)->required(),
-            Forms\Components\Select::make('payment_method')->label('Mode de paiement')->options(['CASH' => 'Espèces', 'BANK' => 'Banque', 'TMONEY' => 'T-Money', 'FLOOZ' => 'Flooz', 'OTHER' => 'Autre'])->required(),
+            Forms\Components\Select::make('payment_method')->label('Mode de paiement')->options(['CASH' => 'Espèces'])->default('CASH')->required(),
             Forms\Components\TextInput::make('reference')->maxLength(120),
             Forms\Components\Textarea::make('notes'),
         ])->columns(2);
@@ -37,7 +37,7 @@ class PaymentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            Tables\Columns\TextColumn::make('student.full_name')->label('Élève')->searchable()->weight('bold')->description(fn (Payment $record): string => $record->payment_method.' · '.($record->reference ?: '—'))->wrap(),
+            Tables\Columns\TextColumn::make('student.full_name')->label('Élève')->searchable()->weight('bold')->description(fn (Payment $record): string => ($record->payment_method === 'CASH' ? 'Paiement en espèces' : $record->payment_method).' · '.($record->reference ?: '—'))->wrap(),
             Tables\Columns\TextColumn::make('amount')->money('XOF')->sortable()->weight('bold'),
             Tables\Columns\TextColumn::make('payment_method')->badge()->toggleable(isToggledHiddenByDefault: true),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn (string $state): string => $state === Payment::CONFIRMED ? 'success' : 'warning'),

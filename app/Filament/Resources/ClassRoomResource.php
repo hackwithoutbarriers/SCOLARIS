@@ -24,6 +24,8 @@ class ClassRoomResource extends Resource
             Forms\Components\Select::make('academic_year_id')->relationship('academicYear', 'name')->required(),
             Forms\Components\TextInput::make('name')->required(),
             Forms\Components\TextInput::make('grade_level'),
+            Forms\Components\TextInput::make('cycle')->label('Cycle')->helperText('Primaire, secondaire 1, secondaire 2, ou toute valeur propre à l’école.'),
+            Forms\Components\TextInput::make('filiere')->label('Filière')->helperText('Général, technique/professionnel, ou toute valeur propre à l’école.'),
             Forms\Components\TextInput::make('capacity')->numeric(),
         ]);
     }
@@ -31,7 +33,7 @@ class ClassRoomResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            Tables\Columns\TextColumn::make('name')->label('Nom')->searchable(), Tables\Columns\TextColumn::make('academicYear.name')->label('Année'), Tables\Columns\TextColumn::make('grade_level')->label('Niveau'), Tables\Columns\TextColumn::make('enrollments_count')->counts('enrollments')->label('Élèves'),
+            Tables\Columns\TextColumn::make('name')->label('Nom')->searchable(), Tables\Columns\TextColumn::make('academicYear.name')->label('Année'),             Tables\Columns\TextColumn::make('grade_level')->label('Niveau'), Tables\Columns\TextColumn::make('cycle')->label('Cycle'), Tables\Columns\TextColumn::make('filiere')->label('Filière'), Tables\Columns\TextColumn::make('enrollments_count')->counts('enrollments')->label('Élèves'),
         ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 

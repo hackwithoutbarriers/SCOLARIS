@@ -48,6 +48,9 @@ class StudentResource extends Resource
             Tables\Columns\TextColumn::make('email')->toggleable(),
             Tables\Columns\TextColumn::make('phone')->toggleable(),
             Tables\Columns\BadgeColumn::make('status')->colors(['success' => 'active', 'danger' => 'inactive']),
+        ])->headerActions([
+            Tables\Actions\Action::make('exportCsv')->label('Exporter CSV')->url(fn (): string => route('students.registry.csv'))->openUrlInNewTab(),
+            Tables\Actions\Action::make('exportPdf')->label('Exporter PDF')->url(fn (): string => route('students.registry.pdf'))->openUrlInNewTab(),
         ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 

@@ -26,6 +26,7 @@ class EnrollmentResource extends Resource
             Forms\Components\Select::make('class_room_id')->relationship('classRoom', 'name')->required(),
             Forms\Components\DatePicker::make('enrolled_at')->default(now())->required(),
             Forms\Components\Select::make('status')->label('Statut')->options(['active' => 'Active', 'withdrawn' => 'Retiré'])->default('active')->required(),
+            Forms\Components\CheckboxList::make('optional_fee_types')->label('Services optionnels')->options(['canteen' => 'Cantine', 'transport' => 'Transport'])->columns(2),
         ]);
     }
 

@@ -17,7 +17,7 @@ class FeeStructureResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static ?string $navigationGroup = 'Finance';
+    protected static ?string $navigationGroup = 'Finances';
 
     protected static ?string $navigationLabel = 'Grilles tarifaires';
 

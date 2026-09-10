@@ -44,11 +44,20 @@ class ReportCardResource extends Resource
             Tables\Actions\Action::make('approve')
                 ->label('Approuver')
                 ->icon('heroicon-o-check-circle')
-                ->visible(fn (ReportCard $record): bool => $record->status === 'review' && auth()->user()?->isDirector())
+                ->visible(fn (ReportCard $record): bool => $record->status === 'conseil_de_classe' && auth()->user()?->isDirector())
                 ->requiresConfirmation()
                 ->action(function (ReportCard $record): void {
                     app(ReportCardService::class)->approve($record);
                     Notification::make()->success()->title('Bulletin approuvé.')->send();
+                }),
+            Tables\Actions\Action::make('classCouncil')
+                ->label('Valider par le conseil de classe')
+                ->icon('heroicon-o-user-group')
+                ->visible(fn (ReportCard $record): bool => $record->status === 'review' && auth()->user()?->isDirector())
+                ->requiresConfirmation()
+                ->action(function (ReportCard $record): void {
+                    app(ReportCardService::class)->submitToClassCouncil($record);
+                    Notification::make()->success()->title('Bulletin transmis au conseil de classe.')->send();
                 }),
             Tables\Actions\Action::make('publish')
                 ->label('Publier')
@@ -58,6 +67,18 @@ class ReportCardResource extends Resource
                 ->action(function (ReportCard $record): void {
                     app(ReportCardService::class)->publish($record);
                     Notification::make()->success()->title('Bulletin publié.')->send();
+                }),
+            Tables\Actions\Action::make('overrideMention')
+                ->label('Dérogation mention')
+                ->icon('heroicon-o-pencil-square')
+                ->visible(fn (ReportCard $record): bool => $record->status !== 'published' && auth()->user()?->isDirector())
+                ->form([
+                    \Filament\Forms\Components\TextInput::make('mention')->label('Mention')->required(),
+                    \Filament\Forms\Components\Textarea::make('reason')->label('Motif')->required(),
+                ])
+                ->action(function (ReportCard $record, array $data): void {
+                    app(ReportCardService::class)->overrideAcademicMention($record, $data['mention'], $data['reason']);
+                    Notification::make()->success()->title('Dérogation enregistrée et auditée.')->send();
                 }),
             Tables\Actions\Action::make('html')->url(fn (ReportCard $record) => route('report-cards.html', $record))->openUrlInNewTab(),
             Tables\Actions\Action::make('pdf')->url(fn (ReportCard $record) => route('report-cards.pdf', $record))->openUrlInNewTab(),

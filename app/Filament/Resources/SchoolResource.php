@@ -34,6 +34,11 @@ class SchoolResource extends Resource
             TextInput::make('email')->email(), TextInput::make('phone'), TextInput::make('address'),
             TextInput::make('city'), TextInput::make('timezone')->default('Africa/Lome'),
             TextInput::make('country')->default('Togo')->required(), Toggle::make('active')->default(true),
+            TextInput::make('due_reminder_days')->label('Rappel d’échéance (jours avant)')
+                ->numeric()->minValue(0)->maxValue(30)->default(3)->required(),
+            Toggle::make('due_reminders_enabled')->label('Rappels WhatsApp d’échéance')->default(true),
+            Toggle::make('single_operator_mode')->label('Mode école mono-utilisateur')
+                ->helperText('Regroupe les accès quotidiens du directeur sans modifier les autorisations.'),
         ]);
     }
 

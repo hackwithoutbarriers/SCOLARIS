@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TermResource\Pages;
 use App\Models\Term;
 use App\Services\TermClosureService;
+use App\Services\GradeCalculationService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -41,6 +42,13 @@ class TermResource extends Resource
             Tables\Columns\TextColumn::make('status')->label('État')->badge()->formatStateUsing(fn (string $state): string => $state === 'closed' ? 'Clôturée' : 'Ouverte'),
         ])->actions([
             Tables\Actions\EditAction::make()->hidden(fn (Term $record): bool => $record->isClosed()),
+            Tables\Actions\Action::make('validateGrades')
+                ->label('Valider les notes')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
+                ->visible(fn (Term $record): bool => ! $record->isClosed() && auth()->user()?->isDirector())
+                ->requiresConfirmation()
+                ->action(fn (Term $record): Term => app(GradeCalculationService::class)->validateTerm($record)),
             Tables\Actions\Action::make('close')
                 ->label('Clôturer la période')
                 ->icon('heroicon-o-lock-closed')

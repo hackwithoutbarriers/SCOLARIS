@@ -23,7 +23,9 @@ class GuardianResource extends Resource
         return $form->schema([
             Forms\Components\TextInput::make('name')->required(),
             Forms\Components\TextInput::make('relationship'),
-            Forms\Components\TextInput::make('phone')->required(),
+            Forms\Components\TextInput::make('phone')->label('Téléphone WhatsApp')->required()->maxLength(20)
+                ->regex('/^(?:\+228|228|00228)?\d{8}$/')
+                ->helperText('Numéro togolais, par exemple +22890000000.'),
             Forms\Components\TextInput::make('email')->email(),
             Forms\Components\Textarea::make('address'),
         ]);
