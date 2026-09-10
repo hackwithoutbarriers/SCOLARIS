@@ -6,7 +6,7 @@
 <p class="muted">Reçu {{ $payment->receipt->number }} · {{ $payment->paid_at?->format('d/m/Y H:i') }}</p>
 <p>Élève : <strong>{{ $payment->student->full_name }}</strong></p>
 <p>Montant : <span class="total">{{ number_format($payment->amount, 0, ',', ' ') }} {{ $payment->currency }}</span></p>
-<p>Méthode : {{ $payment->payment_method }} · Référence : {{ $payment->reference ?: '—' }}</p>
+<p>Méthode : {{ $payment->payment_method === 'CASH' ? 'Paiement en espèces' : $payment->payment_method }} · Référence : {{ $payment->reference ?: '—' }}</p>
 <p>Reste à payer : <strong>{{ number_format($payment->receipt->balance_after, 0, ',', ' ') }} {{ $payment->currency }}</strong></p>
 <p class="muted">Enregistré par : {{ $payment->receiver?->name ?: 'Système' }}</p>
 </body>

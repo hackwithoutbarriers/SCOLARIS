@@ -4,6 +4,8 @@ use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RegistrationRequestController;
+use App\Http\Controllers\StudentRegistryController;
+use App\Http\Controllers\StudentCardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
@@ -41,7 +43,17 @@ Route::middleware(['auth', 'active', 'throttle:120,1'])->prefix('api')->group(fu
 });
 Route::post('api/payments/webhooks/{provider}', [PaymentController::class, 'webhook'])
     ->middleware('throttle:120,1');
+Route::post('webhooks/twilio/whatsapp', [PaymentController::class, 'twilioWhatsappStatus'])
+    ->name('webhooks.twilio.whatsapp');
 
 Route::middleware('auth')->get('/report-cards/{reportCard}/html', [AcademicController::class, 'reportCardHtml'])->name('report-cards.html');
 Route::middleware('auth')->get('/report-cards/{reportCard}/pdf', [AcademicController::class, 'reportCardPdf'])->name('report-cards.pdf');
 Route::middleware('auth')->get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+Route::middleware(['auth', 'active'])->prefix('student-registry')->group(function (): void {
+    Route::get('/csv', [StudentRegistryController::class, 'csv'])->name('students.registry.csv');
+    Route::get('/pdf', [StudentRegistryController::class, 'pdf'])->name('students.registry.pdf');
+});
+Route::middleware(['auth', 'active'])->group(function (): void {
+    Route::get('/students/{student}/card.pdf', [StudentCardController::class, 'individual'])->name('student-cards.individual');
+    Route::get('/classes/{classRoom}/cards.pdf', [StudentCardController::class, 'classBatch'])->name('student-cards.class');
+});

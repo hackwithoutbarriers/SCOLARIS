@@ -27,12 +27,28 @@ class ReportCardWorkflowTest extends TestCase
         $card = app(ReportCardService::class)->generate(Student::factory()->create(['school_id' => $school->id]), $year, $term);
         app(ReportCardService::class)->submitForReview($card);
         $this->actingAs(User::factory()->create(['school_id' => $school->id, 'role' => 'director']));
+        app(ReportCardService::class)->submitToClassCouncil($card->refresh());
         app(ReportCardService::class)->approve($card->refresh());
         app(ReportCardService::class)->publish($card->refresh());
 
         $this->assertSame('published', $card->refresh()->status);
-        $this->assertCount(4, $card->versions);
-        $this->assertSame(['draft', 'review', 'approved', 'published'], $card->versions->pluck('status')->all());
+        $this->assertCount(5, $card->versions);
+        $this->assertSame(['draft', 'review', 'conseil_de_classe', 'approved', 'published'], $card->versions->pluck('status')->all());
+    }
+
+    public function test_approval_requires_class_council_step(): void
+    {
+        $school = School::factory()->create();
+        $director = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
+        $this->actingAs($director);
+        $year = AcademicYear::create(['name' => '2026-2027', 'starts_at' => '2026-09-01', 'ends_at' => '2027-08-31']);
+        $term = Term::create(['academic_year_id' => $year->id, 'name' => 'Term 1', 'starts_at' => '2026-09-01', 'ends_at' => '2026-12-20', 'sort_order' => 1]);
+        $card = app(ReportCardService::class)->generate(Student::factory()->create(['school_id' => $school->id]), $year, $term);
+        $service = app(ReportCardService::class);
+        $service->submitForReview($card);
+
+        $this->expectException(ValidationException::class);
+        $service->approve($card->refresh());
     }
 
     public function test_report_card_template_rejects_unstructured_sections(): void
@@ -69,7 +85,7 @@ class ReportCardWorkflowTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'starts_at' => '2026-09-01', 'ends_at' => '2027-08-31']);
         $card = app(ReportCardService::class)->generate(Student::factory()->create(['school_id' => $school->id]), $year);
         $service = app(ReportCardService::class);
-        $service->publish($service->approve($service->submitForReview($card)));
+        $service->publish($service->approve($service->submitToClassCouncil($service->submitForReview($card))));
         $this->expectException(ValidationException::class);
         $card->update(['data' => ['tampered' => true]]);
     }
