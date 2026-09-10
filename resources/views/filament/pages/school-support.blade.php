@@ -17,8 +17,8 @@
                 <h3 class="font-extrabold text-primary-700">{{ $selectedSchool->name }}</h3>
                 <p class="mt-1 text-sm text-gray-500">{{ $selectedSchool->code }} · {{ $selectedSchool->city ?: 'Ville non renseignée' }}</p>
                 <div class="mt-5 flex flex-wrap gap-3">
-                    <a wire:click="recordIntervention('school_configuration_opened')" class="fi-btn fi-color-primary cursor-pointer" href="{{ \App\Filament\Resources\SchoolResource::getUrl('edit', ['record' => $selectedSchool]) }}">Configurer l'école</a>
-                    <a wire:click="recordIntervention('users_management_opened')" class="fi-btn cursor-pointer" href="{{ \App\Filament\Resources\UserResource::getUrl() }}">Gérer les utilisateurs</a>
+                    <button wire:click="recordIntervention('school_configuration_opened', '{{ \App\Filament\Resources\SchoolResource::getUrl('edit', ['record' => $selectedSchool]) }}')" class="fi-btn fi-color-primary cursor-pointer">Configurer l'école</button>
+                    <button wire:click="recordIntervention('users_management_opened', '{{ \App\Filament\Resources\UserResource::getUrl() }}')" class="fi-btn cursor-pointer">Gérer les utilisateurs</button>
                 </div>
             </div>
             <div class="premium-card rounded-2xl bg-white p-5 sm:p-6">
