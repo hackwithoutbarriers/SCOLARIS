@@ -14,9 +14,15 @@ services:
       - key: APP_KEY
         sync: false
       - key: APP_URL
-        value: https://scolaris-p8px.onrender.com
-      - key: ASSET_URL
-        value: https://scolaris-p8px.onrender.com
+        sync: false
+      - key: TRUSTED_PROXIES
+        value: "*"
+      - key: SCOLARIS_OWNER_EMAIL
+        sync: false
+      - key: SCOLARIS_OWNER_NAME
+        sync: false
+      - key: SCOLARIS_OWNER_PASSWORD
+        sync: false
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
@@ -33,6 +39,12 @@ services:
         value: require
       - key: SESSION_DRIVER
         value: database
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: SESSION_HTTP_ONLY
+        value: "true"
+      - key: SESSION_SAME_SITE
+        value: lax
       - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
@@ -53,7 +65,7 @@ services:
     name: scolaris-worker
     runtime: docker
     plan: starter
-    dockerCommand: sh /usr/local/bin/start-worker.sh
+    dockerCommand: /usr/local/bin/start-worker.sh
     envVars:
       - key: APP_ENV
         value: production
@@ -81,7 +93,7 @@ services:
     name: scolaris-scheduler
     runtime: docker
     schedule: "0 5 * * *"
-    dockerCommand: sh /usr/local/bin/run-scheduler.sh
+    dockerCommand: /usr/local/bin/run-scheduler.sh
     envVars:
       - key: APP_ENV
         value: production
