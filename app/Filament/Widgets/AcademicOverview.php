@@ -27,7 +27,7 @@ class AcademicOverview extends StatsOverviewWidget
             Stat::make('Moyenne générale', number_format($average, 2).' %')->color($average >= 50 ? 'success' : 'warning'),
             Stat::make('Matières sans notes', $missing)->color($missing ? 'warning' : 'success'),
             Stat::make('Bulletins brouillon', ReportCard::query()->where('status', 'draft')->count())->color('warning'),
-            Stat::make('Bulletins à valider', ReportCard::query()->whereIn('status', ['review', 'approved'])->count())->color('primary'),
+            Stat::make('Bulletins à valider', ReportCard::query()->whereIn('status', ['review', 'conseil_de_classe', 'approved'])->count())->color('primary'),
             Stat::make('Bulletins publiés', ReportCard::query()->where('status', 'published')->count())->color('success'),
         ];
     }

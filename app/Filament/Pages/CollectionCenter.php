@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class CollectionCenter extends Page
 {
-    protected static ?string $navigationGroup = 'Finance';
+    protected static ?string $navigationGroup = 'Finances';
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 

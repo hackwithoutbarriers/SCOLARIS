@@ -87,7 +87,7 @@ class RoleActionCenter extends StatsOverviewWidget
 
         $absences = AttendanceRecord::query()->where('status', 'ABSENT')->whereHas('session', fn ($query) => $query->whereDate('session_date', today()))->count();
         $missingGrades = Grade::query()->whereNull('score')->count();
-        $toPublish = ReportCard::query()->whereIn('status', ['review', 'approved'])->count();
+        $toPublish = ReportCard::query()->whereIn('status', ['review', 'conseil_de_classe', 'approved'])->count();
         $outstanding = (int) Invoice::query()->whereIn('status', [Invoice::ISSUED, Invoice::PARTIALLY_PAID, Invoice::OVERDUE])->get()->sum(fn (Invoice $invoice): int => $invoice->balance());
 
         return [
