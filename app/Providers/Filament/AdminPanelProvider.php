@@ -39,13 +39,20 @@ class AdminPanelProvider extends PanelProvider
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::PAGE_START,
-            fn (): string => view('filament.partials.context-bar')->render(),
+            fn (): string => $this->renderOptionalView('filament.partials.context-bar'),
         );
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_START,
-            fn (): string => view('filament.partials.decorative-scope')->render(),
+            fn (): string => $this->renderOptionalView('filament.partials.decorative-scope'),
         );
+    }
+
+    private function renderOptionalView(string $view): string
+    {
+        return is_file(resource_path('views/'.str_replace('.', '/', $view).'.blade.php'))
+            ? view($view)->render()
+            : '';
     }
 
     public function panel(Panel $panel): Panel
