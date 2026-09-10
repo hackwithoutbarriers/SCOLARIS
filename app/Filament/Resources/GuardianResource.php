@@ -18,12 +18,17 @@ class GuardianResource extends Resource
 
     protected static ?string $navigationGroup = 'Personnes';
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isDirector() === true || auth()->user()?->isSecretary() === true;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\TextInput::make('name')->required(),
             Forms\Components\TextInput::make('relationship'),
-            Forms\Components\TextInput::make('phone')->label('Téléphone WhatsApp')->required()->maxLength(20)
+            Forms\Components\TextInput::make('phone')->label('Téléphone WhatsApp')->nullable()->maxLength(20)
                 ->regex('/^(?:\+228|228|00228)?\d{8}$/')
                 ->helperText('Numéro togolais, par exemple +22890000000.'),
             Forms\Components\TextInput::make('email')->email(),

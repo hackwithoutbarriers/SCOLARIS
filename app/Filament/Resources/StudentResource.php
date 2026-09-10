@@ -20,7 +20,7 @@ class StudentResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isDirector() === true;
+        return auth()->user()?->isDirector() === true || auth()->user()?->isSecretary() === true;
     }
 
     public static function form(Form $form): Form

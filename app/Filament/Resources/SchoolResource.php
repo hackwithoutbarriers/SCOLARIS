@@ -6,6 +6,7 @@ use App\Filament\Resources\SchoolResource\Pages;
 use App\Models\School;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\EditAction;
@@ -39,6 +40,18 @@ class SchoolResource extends Resource
             Toggle::make('due_reminders_enabled')->label('Rappels WhatsApp d’échéance')->default(true),
             Toggle::make('single_operator_mode')->label('Mode école mono-utilisateur')
                 ->helperText('Regroupe les accès quotidiens du directeur sans modifier les autorisations.'),
+            Select::make('whatsapp_provider')->label('Fournisseur WhatsApp')->options([
+                'click_to_chat' => 'Lien Click-to-Chat (gratuit)',
+                'twilio' => 'Twilio (phase 2)',
+                'meta_cloud' => 'Meta Cloud (phase 2)',
+            ])->default('click_to_chat')->required(),
+            TextInput::make('mail_host')->label('Serveur SMTP'),
+            TextInput::make('mail_port')->label('Port SMTP')->numeric(),
+            TextInput::make('mail_username')->label('Identifiant SMTP'),
+            TextInput::make('mail_password')->label('Mot de passe SMTP')->password()->dehydrated(fn ($state): bool => filled($state)),
+            TextInput::make('mail_from_address')->label('Adresse expéditeur')->email(),
+            TextInput::make('mail_from_name')->label('Nom expéditeur'),
+            Select::make('mail_encryption')->label('Chiffrement')->options(['tls' => 'TLS', 'ssl' => 'SSL'])->nullable(),
         ]);
     }
 

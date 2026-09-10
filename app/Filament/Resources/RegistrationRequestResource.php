@@ -6,6 +6,9 @@ use App\Filament\Resources\RegistrationRequestResource\Pages;
 use App\Models\RegistrationRequest;
 use App\Services\RegistrationApprovalService;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -37,7 +40,43 @@ class RegistrationRequestResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
+        return $table->headerActions([
+            Tables\Actions\Action::make('inviteStaff')
+                ->label('Inviter un membre du personnel')
+                ->visible(fn (): bool => auth()->user()?->isSuperAdmin() || auth()->user()?->isDirector())
+                ->form([
+                    TextInput::make('name')->required(),
+                    TextInput::make('email')->email()->required(),
+                    TextInput::make('phone')
+                        ->required(fn (): bool => config('attendance.notifications.default_channel') === 'whatsapp'),
+                    Select::make('role')->label('Rôle principal')->options([
+                        'teacher' => 'Enseignant',
+                        'accountant' => 'Comptable',
+                        'secretary' => 'Secrétaire',
+                    ])->required(),
+                    Select::make('secondary_role')->label('Rôle secondaire (optionnel)')->options([
+                        'teacher' => 'Enseignant',
+                        'accountant' => 'Comptable',
+                        'secretary' => 'Secrétaire',
+                    ]),
+                    Select::make('school_id')
+                        ->label('École')
+                        ->relationship('school', 'name')
+                        ->visible(fn (): bool => auth()->user()?->isSuperAdmin())
+                        ->required(fn (): bool => auth()->user()?->isSuperAdmin()),
+                ])
+                ->action(function (array $data): void {
+                    [$invitation, $token] = app(\App\Services\StaffInvitationService::class)
+                        ->create(auth()->user(), $data);
+
+                    Notification::make()
+                        ->title('Invitation mise en file')
+                        ->body('Elle sera envoyée par le canal de notification configuré.')
+                        ->persistent()
+                        ->success()
+                        ->send();
+                }),
+        ])->columns([
             Tables\Columns\TextColumn::make('name')->searchable()->weight('bold'),
             Tables\Columns\TextColumn::make('email')->searchable(),
             Tables\Columns\TextColumn::make('school.name')->label('École'),

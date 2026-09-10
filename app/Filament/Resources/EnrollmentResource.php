@@ -18,6 +18,11 @@ class EnrollmentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isDirector() === true || auth()->user()?->isSecretary() === true;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([

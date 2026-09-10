@@ -18,6 +18,12 @@ class ExpenseResource extends Resource
     protected static ?string $navigationGroup = 'Finances';
     protected static ?string $navigationLabel = 'Dépenses';
     protected static ?string $modelLabel = 'Dépense';
+    protected static ?string $pluralModelLabel = 'Dépenses';
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isFinanceOperator() === true;
+    }
 
     public static function form(Form $form): Form
     {

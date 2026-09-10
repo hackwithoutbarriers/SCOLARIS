@@ -32,7 +32,7 @@ class UserResource extends Resource
             TextInput::make('first_name')->required(), TextInput::make('last_name')->required(),
             TextInput::make('name')->required(), TextInput::make('email')->email()->required(),
             TextInput::make('phone'), Select::make('school_id')->relationship('school', 'name')->searchable()->preload(),
-            Select::make('role')->options(['super_admin' => 'Super Admin', 'director' => 'Directeur', 'teacher' => 'Enseignant', 'accountant' => 'Comptable'])->required(),
+            Select::make('role')->label('Rôle')->options(['super_admin' => 'Super administrateur', 'director' => 'Directeur', 'teacher' => 'Enseignant', 'accountant' => 'Comptable', 'secretary' => 'Secrétaire'])->required(),
             TextInput::make('password')->password()->dehydrated(fn ($state) => filled($state))->rules([Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()])->required(fn (string $operation): bool => $operation === 'create'),
             Toggle::make('is_active')->default(true),
         ]);
