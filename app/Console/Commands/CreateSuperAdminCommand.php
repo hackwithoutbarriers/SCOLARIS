@@ -11,7 +11,8 @@ class CreateSuperAdminCommand extends Command
     protected $signature = 'scolaris:create-super-admin
         {email? : Login email; defaults to SCOLARIS_OWNER_EMAIL}
         {--name= : Display name; defaults to SCOLARIS_OWNER_NAME}
-        {--password= : Password; defaults to SCOLARIS_OWNER_PASSWORD}';
+        {--password= : Password; defaults to SCOLARIS_OWNER_PASSWORD}
+        {--force : Explicitly replace an existing account password}';
 
     protected $description = 'Create a Scolaris super administrator';
 
@@ -40,12 +41,13 @@ class CreateSuperAdminCommand extends Command
             return self::INVALID;
         }
 
-        if (\App\Models\User::withoutGlobalScopes()->where('email', $email)->exists()) {
-            $this->error('Un compte existe déjà avec cette adresse. Aucun changement n’a été effectué.');
-            return self::FAILURE;
+        $existing = \App\Models\User::withoutGlobalScopes()->where('email', $email)->first();
+        if ($existing && ! $this->option('force')) {
+            $this->info("Super Admin already exists: {$existing->email}. No changes were made.");
+            return self::SUCCESS;
         }
 
-        $user = \App\Models\User::withoutGlobalScopes()->create([
+        $attributes = [
                 'name' => $name,
                 'first_name' => $name,
                 'last_name' => null,
@@ -56,7 +58,11 @@ class CreateSuperAdminCommand extends Command
                 'is_active' => true,
                 'must_change_password' => true,
                 'email_verified_at' => now(),
-        ]);
+        ];
+
+        $user = $existing
+            ? tap($existing)->update($attributes)
+            : \App\Models\User::withoutGlobalScopes()->create($attributes);
 
         $this->info("Super Admin ready: {$user->email}");
 
