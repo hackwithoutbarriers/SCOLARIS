@@ -23,7 +23,7 @@ use App\Models\Certificate;
 use App\Models\EvaluationRuleSet;
 use App\Policies\SchoolResourcePolicy;
 use App\Support\Tenancy\SchoolContext;
-use App\Services\{HttpNotificationProvider, MockNotificationProvider, NotificationProvider, WhatsAppNotificationProvider};
+use App\Services\{EmailNotificationProvider, HttpNotificationProvider, MockNotificationProvider, NotificationProvider, WhatsAppNotificationProvider};
 use App\Services\Payments\{FakePaymentGateway, ManualPaymentGateway, PaymentGatewayInterface};
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -39,12 +39,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(SchoolContext::class);
         $this->app->bind(NotificationProvider::class, function () {
-            return config('attendance.notifications.default_channel') === 'whatsapp'
+            return config('attendance.notifications.default_channel') === 'email'
+                ? app(EmailNotificationProvider::class)
+                : (config('attendance.notifications.default_channel') === 'whatsapp'
                 && filled(config('services.twilio.sid'))
                 ? app(WhatsAppNotificationProvider::class)
                 : (config('attendance.notifications.provider') === 'http'
                 ? app(HttpNotificationProvider::class)
-                : app(MockNotificationProvider::class));
+                : app(MockNotificationProvider::class)));
         });
         $this->app->bind(PaymentGatewayInterface::class, function () {
             return config('payments.gateway', 'manual') === 'fake'
@@ -79,5 +81,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Student::class, \App\Policies\AcademicPolicy::class);
         Gate::policy(\App\Models\Assessment::class, \App\Policies\AcademicPolicy::class);
         Gate::policy(\App\Models\ReportCard::class, \App\Policies\AcademicPolicy::class);
+        Gate::policy(\App\Models\Grade::class, \App\Policies\GradePolicy::class);
+        foreach ([\App\Models\Guardian::class, \App\Models\Enrollment::class] as $model) {
+            Gate::policy($model, \App\Policies\SecretaryResourcePolicy::class);
+        }
     }
 }

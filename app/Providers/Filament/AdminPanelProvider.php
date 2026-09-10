@@ -5,6 +5,8 @@ namespace App\Providers\Filament;
 use App\Filament\Widgets\RoleActionCenter;
 use App\Filament\Widgets\SchoolSupportOverview;
 use App\Filament\Widgets\SuperAdminOverview;
+use App\Http\Middleware\EnsureActiveUser;
+use App\Http\Middleware\EnsurePasswordChange;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -34,6 +36,16 @@ class AdminPanelProvider extends PanelProvider
                 ? app(Vite::class)('resources/css/filament-admin-premium.css')->toHtml()
                 : '',
         );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::PAGE_START,
+            fn (): string => view('filament.partials.context-bar')->render(),
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_START,
+            fn (): string => view('filament.partials.decorative-scope')->render(),
+        );
     }
 
     public function panel(Panel $panel): Panel
@@ -62,6 +74,6 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class, DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
-            ->authMiddleware([Authenticate::class]);
+            ->authMiddleware([Authenticate::class, EnsureActiveUser::class, EnsurePasswordChange::class]);
     }
 }

@@ -4,6 +4,7 @@ use App\Models\NotificationQueue;
 use App\Models\Student;
 use App\Models\AttendanceSession;
 use App\Models\Invoice;
+use App\Models\StaffInvitation;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 class NotificationService {
@@ -55,6 +56,53 @@ class NotificationService {
             'updated_at' => now(),
         ]);
         return NotificationQueue::where('idempotency_key', $key)->first();
+    }
+
+    public function queueInvitation(StaffInvitation $invitation, string $token): NotificationQueue
+    {
+        $channel = config('attendance.notifications.default_channel', 'whatsapp');
+        if (!in_array($channel, ['email', 'whatsapp'], true)) {
+            throw new \InvalidArgumentException(
+                'Le canal des invitations doit être configuré sur email ou whatsapp.'
+            );
+        }
+        $recipient = $channel === 'whatsapp' ? $invitation->phone : $invitation->email;
+
+        if (!$recipient) {
+            throw new \InvalidArgumentException(
+                $channel === 'whatsapp'
+                    ? 'Un numéro WhatsApp est obligatoire pour cette invitation.'
+                    : 'Une adresse email est obligatoire pour cette invitation.'
+            );
+        }
+
+        $url = route('staff-invitations.accept', ['token' => $token]);
+        $payload = [
+            'name' => $invitation->name,
+            'role' => $invitation->role,
+            'secondary_role' => $invitation->secondary_role ?? '',
+            'invitation_url' => $url,
+            'subject' => 'Invitation à rejoindre Scolaris',
+            'message' => "Bonjour {$invitation->name}, vous êtes invité(e) à rejoindre Scolaris. Activez votre compte ici : {$url}",
+        ];
+        $key = 'staff-invitation:'.$invitation->id;
+
+        NotificationQueue::insertOrIgnore([
+            'school_id' => $invitation->school_id,
+            'event' => 'invitation',
+            'template' => 'staff_invitation',
+            'recipient' => $recipient,
+            'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+            'provider' => config('attendance.notifications.provider', 'mock'),
+            'channel' => $channel,
+            'status' => 'PENDING',
+            'scheduled_at' => now(),
+            'idempotency_key' => $key,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return NotificationQueue::where('idempotency_key', $key)->firstOrFail();
     }
 
     public function queueForValidatedSession(AttendanceSession $session): void

@@ -50,6 +50,7 @@ final class RegistrationApprovalService
                     'role' => $request->requested_role,
                     'password' => $request->password_hash,
                     'is_active' => true,
+                    'must_change_password' => !$isDirectorRequest,
                     'email_verified_at' => now(),
                 ],
             );
