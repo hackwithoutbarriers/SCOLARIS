@@ -3,49 +3,29 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Concerns\BelongsToSchool;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use PragmaRX\Google2FA\Google2FA;
 
+#[Fillable(['name', 'email', 'password', 'status', 'is_superuser', 'approved_by_user_id', 'approved_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser
 {
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
+
     /** @use HasFactory<UserFactory> */
-    use BelongsToSchool, HasFactory, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name', 'first_name', 'last_name',
-        'email',
-        'phone',
-        'password',
-        'school_id',
-        'role',
-        'secondary_role',
-        'is_active',
-        'must_change_password',
-        'email_verified_at',
-        'onboarding_step',
-        'onboarding_completed_at',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    use HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -57,55 +37,43 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_active' => 'boolean',
-            'must_change_password' => 'boolean',
-            'onboarding_step' => 'integer',
-            'onboarding_completed_at' => 'datetime',
+            'is_superuser' => 'boolean',
+            'approved_at' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
-    public function teacherAssignments(): HasMany
+    public function approvedBy(): BelongsTo
     {
-        return $this->hasMany(TeacherAssignment::class, 'teacher_id');
+        return $this->belongsTo(self::class, 'approved_by_user_id');
     }
 
-    public function isSuperAdmin(): bool
+    public function isApproved(): bool
     {
-        return $this->is_active && $this->role === 'super_admin';
+        return $this->is_superuser || $this->status === self::STATUS_APPROVED;
     }
 
-    public function isDirector(): bool
+    public function isPending(): bool
     {
-        return $this->is_active && $this->hasRole(['director', 'admin', 'principal']);
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->is_active && ($this->isSuperAdmin() || $this->isDirector());
-    }
-
-    public function isFinanceOperator(): bool
-    {
-        return $this->is_active && ($this->isSuperAdmin() || $this->isDirector() || $this->hasRole('accountant'));
-    }
-
-    public function isSecretary(): bool
-    {
-        return $this->is_active && $this->hasRole('secretary');
-    }
-
-    public function hasRole(string|array $roles): bool
-    {
-        $roles = (array) $roles;
-
-        return in_array($this->role, $roles, true)
-            || in_array($this->secondary_role, $roles, true);
+        return $this->status === self::STATUS_PENDING;
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_active
-            && $this->email_verified_at !== null
-            && ($this->isSuperAdmin() || $this->school_id !== null);
+        return $this->is_superuser || $this->status === self::STATUS_APPROVED;
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return filled($this->two_factor_secret) && filled($this->two_factor_confirmed_at);
+    }
+
+    public function verifyTwoFactorCode(string $code): bool
+    {
+        if (! filled($this->two_factor_secret)) {
+            return false;
+        }
+
+        return app(Google2FA::class)->verifyKey($this->two_factor_secret, trim($code), 8);
     }
 }
