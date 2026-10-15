@@ -12,6 +12,8 @@ class EnsureActiveUser
     {
         if ($request->user()?->is_active !== true) {
             auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
             abort(403, 'Compte désactivé.');
         }
 

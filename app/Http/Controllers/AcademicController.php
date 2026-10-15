@@ -9,6 +9,7 @@ use App\Models\Term;
 use App\Services\GradeCalculationService;
 use App\Services\GradeCsvImporter;
 use App\Services\ReportCardRenderer;
+use App\Support\Tenancy\SchoolContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,9 +18,15 @@ class AcademicController extends Controller
 {
     public function grades(Student $student, GradeCalculationService $calculator, ?int $term = null): JsonResponse
     {
-        abort_unless(request()->user()->can('viewGrades', $student), 403);
+        $user = request()->user();
+        $termModel = $term ? Term::findOrFail($term) : null;
+        abort_unless($user->can('viewGrades', [$student, $termModel]), 403);
 
-        return response()->json($calculator->calculate($student, $term ? Term::findOrFail($term) : null));
+        $grades = $user->hasRole('teacher') && ! $user->isDirector()
+            ? $calculator->calculateForTeacher($student, $termModel, $user)
+            : $calculator->calculate($student, $termModel);
+
+        return response()->json($grades);
     }
 
     public function storeGrade(Request $request, Assessment $assessment, GradeCalculationService $calculator): JsonResponse
@@ -35,10 +42,12 @@ class AcademicController extends Controller
     public function importGrades(Request $request, GradeCsvImporter $importer): JsonResponse
     {
         $data = $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'], 'school_id' => ['nullable', 'integer']]);
-        abort_unless(auth()->user()->isDirector() || auth()->user()->isSuperAdmin(), 403);
-        abort_unless(auth()->user()->isSuperAdmin() || (int) ($data['school_id'] ?? auth()->user()->school_id) === auth()->user()->school_id, 403);
+        $user = $request->user();
+        $schoolId = app(SchoolContext::class)->id() ?? $user->school_id;
+        abort_unless($user->isDirector() || ($user->isSuperAdmin() && $user->hasActiveSchoolIntervention()), 403);
+        abort_unless($schoolId && (int) ($data['school_id'] ?? $schoolId) === (int) $schoolId, 403);
 
-        return response()->json($importer->import($data['file']->getRealPath(), (int) ($data['school_id'] ?? auth()->user()->school_id)));
+        return response()->json($importer->import($data['file']->getRealPath(), (int) ($data['school_id'] ?? $schoolId)));
     }
 
     public function reportCardHtml(ReportCard $reportCard, ReportCardRenderer $renderer): Response

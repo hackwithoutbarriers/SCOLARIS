@@ -9,7 +9,7 @@ class StaffInvitation extends Model
 {
     protected $fillable = [
         'school_id', 'created_by', 'email', 'name', 'phone',
-        'role', 'secondary_role', 'token_hash', 'expires_at', 'accepted_at',
+        'role', 'secondary_role', 'preferred_channel', 'token_hash', 'expires_at', 'accepted_at',
     ];
 
     protected function casts(): array

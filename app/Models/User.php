@@ -3,29 +3,52 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\BelongsToSchool;
+use App\Services\PhoneNumberFormatter;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use PragmaRX\Google2FA\Google2FA;
 
-#[Fillable(['name', 'email', 'password', 'status', 'is_superuser', 'approved_by_user_id', 'approved_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at'])]
-#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser
 {
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_APPROVED = 'approved';
-
-    public const STATUS_REJECTED = 'rejected';
-
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use BelongsToSchool, HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name', 'first_name', 'last_name',
+        'email',
+        'phone',
+        'password',
+        'school_id',
+        'role',
+        'secondary_role',
+        'is_active',
+        'must_change_password',
+        'email_verified_at',
+        'onboarding_step',
+        'onboarding_completed_at',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -37,43 +60,131 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_superuser' => 'boolean',
-            'approved_at' => 'datetime',
-            'two_factor_confirmed_at' => 'datetime',
+            'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
+            'onboarding_step' => 'integer',
+            'onboarding_completed_at' => 'datetime',
         ];
     }
 
-    public function approvedBy(): BelongsTo
+    protected function phone(): Attribute
     {
-        return $this->belongsTo(self::class, 'approved_by_user_id');
+        return Attribute::make(
+            set: fn (?string $value): array => [
+                'phone' => $value,
+                'login_phone' => $value ? PhoneNumberFormatter::toE164($value) : null,
+            ],
+        );
     }
 
-    public function isApproved(): bool
+    public function teacherAssignments(): HasMany
     {
-        return $this->is_superuser || $this->status === self::STATUS_APPROVED;
+        return $this->hasMany(TeacherAssignment::class, 'teacher_id');
     }
 
-    public function isPending(): bool
+    public function isSuperAdmin(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->is_active && $this->role === 'super_admin';
+    }
+
+    public function isDirector(): bool
+    {
+        return $this->is_active
+            && $this->role !== 'super_admin'
+            && $this->hasRole(['director', 'admin', 'principal']);
+    }
+
+    public function isCenseur(): bool
+    {
+        return $this->is_active && $this->role !== 'super_admin' && $this->hasRole('censeur');
+    }
+
+    public function isAttendanceManager(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return $this->hasActiveSchoolIntervention();
+        }
+
+        return $this->isDirector() || $this->isCenseur();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_active
+            && ($this->isDirector() || ($this->isSuperAdmin() && $this->hasActiveSchoolIntervention()));
+    }
+
+    public function isFinanceOperator(): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if ($this->isSuperAdmin()) {
+            return $this->hasActiveSchoolIntervention();
+        }
+
+        return $this->isDirector() || $this->hasRole('accountant');
+    }
+
+    public function isSecretary(): bool
+    {
+        return $this->is_active && $this->role !== 'super_admin' && $this->hasRole('secretary');
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = (array) $roles;
+
+        return in_array($this->role, $roles, true)
+            || in_array($this->secondary_role, $roles, true);
+    }
+
+    public function hasActiveSchoolIntervention(?int $schoolId = null): bool
+    {
+        if (! $this->isSuperAdmin()) {
+            return false;
+        }
+
+        $interventionSchoolId = (int) session()->get('scolaris_intervention.school_id', 0);
+        $expiresAt = (int) session()->get('scolaris_intervention.expires_at', 0);
+
+        return $interventionSchoolId > 0
+            && $expiresAt > now()->timestamp
+            && ($schoolId === null || $interventionSchoolId === $schoolId);
+    }
+
+    public function canAccessSchool(?int $schoolId): bool
+    {
+        if (! $this->is_active || ! $schoolId) {
+            return false;
+        }
+
+        return $this->isSuperAdmin()
+            ? $this->hasActiveSchoolIntervention($schoolId)
+            : (int) $this->school_id === $schoolId;
+    }
+
+    public function canUseSchoolIntervention(mixed ...$targets): bool
+    {
+        if (! $this->hasActiveSchoolIntervention()) {
+            return false;
+        }
+
+        foreach ($targets as $target) {
+            if ($target instanceof Model && $target->getAttribute('school_id') !== null
+                && ! $this->hasActiveSchoolIntervention((int) $target->getAttribute('school_id'))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_superuser || $this->status === self::STATUS_APPROVED;
-    }
-
-    public function hasTwoFactorEnabled(): bool
-    {
-        return filled($this->two_factor_secret) && filled($this->two_factor_confirmed_at);
-    }
-
-    public function verifyTwoFactorCode(string $code): bool
-    {
-        if (! filled($this->two_factor_secret)) {
-            return false;
-        }
-
-        return app(Google2FA::class)->verifyKey($this->two_factor_secret, trim($code), 8);
+        return $this->is_active
+            && $this->email_verified_at !== null
+            && ($this->isSuperAdmin() || $this->school_id !== null);
     }
 }

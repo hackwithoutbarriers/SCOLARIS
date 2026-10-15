@@ -12,8 +12,8 @@ class RegistrationRequest extends Model
     public const REJECTED = 'rejected';
 
     protected $fillable = [
-        'school_id', 'school_name', 'school_code', 'name', 'email', 'phone',
-        'requested_role', 'password_hash', 'status', 'reviewed_by',
+        'request_type', 'school_id', 'school_name', 'school_code', 'city', 'name', 'email', 'phone',
+        'message', 'preferred_channel', 'requested_role', 'password_hash', 'status', 'reviewed_by',
         'reviewed_at', 'rejection_reason',
     ];
 

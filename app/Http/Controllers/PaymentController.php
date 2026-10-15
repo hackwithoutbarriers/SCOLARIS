@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentTransaction;
+use App\Models\Student;
 use App\Services\Payments\PaymentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,18 +28,21 @@ class PaymentController extends Controller
             'notes' => ['nullable', 'string'],
             'client_operation_id' => ['nullable', 'uuid'],
         ]);
-        $student = \App\Models\Student::query()->findOrFail($data['student_id']);
-        abort_unless($student->school_id === $request->user()->school_id, 403);
+        $student = Student::query()->findOrFail($data['student_id']);
+        abort_unless($request->user()->canAccessSchool((int) $student->school_id), 403);
         $data['school_id'] = $student->school_id;
         $data['idempotency_key'] = $idempotencyKey;
+
         return response()->json($service->recordManual($data)->load('receipt'), 201);
     }
 
     public function receipt(Payment $payment)
     {
-        abort_unless(request()->user()->isFinanceOperator() && $payment->school_id === request()->user()->school_id, 403);
+        abort_unless(request()->user()->isFinanceOperator()
+            && request()->user()->canAccessSchool((int) $payment->school_id), 403);
         $payment->load('student.guardians', 'receiver', 'receipt', 'allocations.invoice');
-        return \Barryvdh\DomPDF\Facade\Pdf::loadView('payments.receipt', compact('payment'))
+
+        return Pdf::loadView('payments.receipt', compact('payment'))
             ->stream($payment->receipt->number.'.pdf');
     }
 
@@ -56,13 +61,16 @@ class PaymentController extends Controller
             ->where('provider', $provider)
             ->where('merchant_reference', $data['merchant_reference'])
             ->firstOrFail();
-        if ($transaction->provider_transaction_id && $transaction->provider_transaction_id !== $data['provider_transaction_id']) abort(422, 'Référence fournisseur incohérente.');
+        if ($transaction->provider_transaction_id && $transaction->provider_transaction_id !== $data['provider_transaction_id']) {
+            abort(422, 'Référence fournisseur incohérente.');
+        }
         $status = match ($data['status']) {
             'SUCCESS', 'CONFIRMED' => Payment::CONFIRMED,
             'FAILED' => Payment::FAILED,
             'EXPIRED' => Payment::CANCELLED,
             default => Payment::PENDING,
         };
+
         return response()->json($service->handleProviderConfirmation($transaction, [
             'status' => $status,
             'provider_transaction_id' => $data['provider_transaction_id'],
@@ -76,17 +84,22 @@ class PaymentController extends Controller
         $type = $request->string('type', 'payments')->toString();
         abort_unless(in_array($type, ['payments', 'debtors'], true), 422);
         $filename = 'scolaris-'.$type.'-'.now()->format('Ymd').'.csv';
+
         return response()->streamDownload(function () use ($type): void {
             $handle = fopen('php://output', 'wb');
             if ($type === 'payments') {
                 fputcsv($handle, ['date', 'eleve', 'classe', 'montant', 'methode', 'reference', 'caissier']);
                 Payment::query()->with(['student', 'receiver'])->where('status', Payment::CONFIRMED)->orderBy('paid_at')->chunk(200, function ($payments) use ($handle): void {
-                    foreach ($payments as $payment) fputcsv($handle, [$payment->paid_at?->toDateTimeString(), $payment->student->full_name, '', $payment->amount, $payment->payment_method, $payment->reference, $payment->receiver?->name]);
+                    foreach ($payments as $payment) {
+                        fputcsv($handle, [$payment->paid_at?->toDateTimeString(), $payment->student->full_name, '', $payment->amount, $payment->payment_method, $payment->reference, $payment->receiver?->name]);
+                    }
                 });
             } else {
                 fputcsv($handle, ['eleve', 'classe', 'montant_du', 'montant_paye', 'solde', 'jours_retard']);
                 Invoice::query()->with(['student', 'classRoom', 'allocations.payment.reversals'])->whereNotIn('status', [Invoice::CANCELLED, Invoice::PAID])->chunk(200, function ($invoices) use ($handle): void {
-                    foreach ($invoices as $invoice) fputcsv($handle, [$invoice->student->full_name, $invoice->classRoom?->name, $invoice->total_amount, $invoice->paidAmount(), $invoice->balance(), max(0, $invoice->due_date->diffInDays(today(), false))]);
+                    foreach ($invoices as $invoice) {
+                        fputcsv($handle, [$invoice->student->full_name, $invoice->classRoom?->name, $invoice->total_amount, $invoice->paidAmount(), $invoice->balance(), max(0, $invoice->due_date->diffInDays(today(), false))]);
+                    }
                 });
             }
 
@@ -97,7 +110,7 @@ class PaymentController extends Controller
     public function twilioWhatsappStatus(Request $request): JsonResponse
     {
         \Log::info('Twilio WhatsApp delivery status', $request->only([
-            'MessageSid', 'MessageStatus', 'To', 'ErrorCode', 'ErrorMessage',
+            'MessageSid', 'MessageStatus', 'ErrorCode',
         ]));
 
         return response()->json(['status' => 'ok']);
@@ -110,6 +123,7 @@ class PaymentController extends Controller
             ->whereIn('status', [Invoice::ISSUED, Invoice::PARTIALLY_PAID, Invoice::OVERDUE])
             ->when($request->filled('student_id'), fn ($q) => $q->where('student_id', $request->integer('student_id')))
             ->orderByDesc('due_date')->get();
+
         return response()->json($invoices->map(fn (Invoice $invoice) => [
             'student' => $invoice->student->full_name,
             'class' => $invoice->classRoom?->name,

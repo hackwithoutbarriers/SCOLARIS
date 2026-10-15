@@ -11,11 +11,11 @@ class School extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'slug', 'timezone', 'email', 'phone', 'address', 'city', 'country', 'logo_path', 'active', 'due_reminder_days', 'due_reminders_enabled', 'single_operator_mode', 'expense_categories', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_encryption', 'whatsapp_provider'];
+    protected $fillable = ['name', 'code', 'slug', 'timezone', 'email', 'phone', 'address', 'city', 'country', 'logo_path', 'active', 'due_reminder_days', 'due_reminders_enabled', 'single_operator_mode', 'expense_categories', 'expense_approval_threshold', 'education_cycles', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_encryption', 'whatsapp_provider'];
 
     protected function casts(): array
     {
-        return ['active' => 'boolean', 'due_reminder_days' => 'integer', 'due_reminders_enabled' => 'boolean', 'single_operator_mode' => 'boolean', 'expense_categories' => 'array', 'mail_password' => 'encrypted', 'mail_port' => 'integer'];
+        return ['active' => 'boolean', 'due_reminder_days' => 'integer', 'due_reminders_enabled' => 'boolean', 'single_operator_mode' => 'boolean', 'expense_categories' => 'array', 'expense_approval_threshold' => 'integer', 'education_cycles' => 'array', 'mail_password' => 'encrypted', 'mail_port' => 'integer'];
     }
 
     protected static function booted(): void
@@ -122,5 +122,55 @@ class School extends Model
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(SchoolSubscription::class)->whereIn('status', ['trial', 'active'])->latestOfMany();
+    }
+
+    public function enabledEducationCycles(): array
+    {
+        return array_values(array_intersect(
+            array_keys(self::educationCycleOptions()),
+            $this->education_cycles ?: array_keys(self::educationCycleOptions()),
+        ));
+    }
+
+    public static function educationCycleOptions(): array
+    {
+        return [
+            'primaire' => 'Primaire',
+            'college' => 'Collège',
+            'lycee' => 'Lycée',
+        ];
+    }
+
+    public static function educationLevelOptions(): array
+    {
+        return [
+            'primaire' => [
+                'ci' => 'CI',
+                'cp' => 'CP',
+                'ce1' => 'CE1',
+                'ce2' => 'CE2',
+                'cm1' => 'CM1',
+                'cm2' => 'CM2',
+            ],
+            'college' => [
+                '6e' => '6e',
+                '5e' => '5e',
+                '4e' => '4e',
+                '3e' => '3e',
+            ],
+            'lycee' => [
+                'seconde' => 'Seconde',
+                'premiere' => 'Première',
+                'terminale' => 'Terminale',
+            ],
+        ];
+    }
+
+    public static function educationSeriesOptions(): array
+    {
+        return [
+            'generale' => 'Générale',
+            'technique' => 'Technique',
+        ];
     }
 }

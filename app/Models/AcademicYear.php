@@ -21,6 +21,17 @@ class AcademicYear extends Model
             $year->start_date ??= $year->starts_at;
             $year->end_date ??= $year->ends_at;
         });
+        static::saved(function (self $year): void {
+            if (! $year->is_current) {
+                return;
+            }
+
+            static::query()
+                ->where('school_id', $year->school_id)
+                ->where('id', '!=', $year->id)
+                ->where('is_current', true)
+                ->update(['is_current' => false]);
+        });
     }
     public function terms(): HasMany { return $this->hasMany(Term::class); }
     public function classRooms(): HasMany { return $this->hasMany(ClassRoom::class); }

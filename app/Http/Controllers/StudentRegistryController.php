@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Support\Tenancy\SchoolContext;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -10,8 +11,9 @@ class StudentRegistryController extends Controller
 {
     public function csv(Request $request)
     {
-        abort_unless($request->user()?->isDirector(), 403);
+        $this->authorizeExport($request);
         $students = Student::query()->with(['enrollments.classRoom'])->orderBy('student_number')->get();
+
         return response()->streamDownload(function () use ($students): void {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Matricule', 'Nom', 'Prénom', 'Date de naissance', 'Sexe', 'Date d’inscription', 'Classe']);
@@ -25,8 +27,17 @@ class StudentRegistryController extends Controller
 
     public function pdf(Request $request)
     {
-        abort_unless($request->user()?->isDirector(), 403);
+        $this->authorizeExport($request);
         $students = Student::query()->with(['enrollments.classRoom'])->orderBy('student_number')->get();
+
         return Pdf::loadView('students.registry', compact('students'))->download('registre-matricule.pdf');
+    }
+
+    private function authorizeExport(Request $request): void
+    {
+        $user = $request->user();
+        $schoolId = app(SchoolContext::class)->id();
+
+        abort_unless($user?->isDirector() || ($schoolId !== null && $user?->hasActiveSchoolIntervention($schoolId)), 403);
     }
 }

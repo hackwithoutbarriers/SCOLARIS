@@ -12,4 +12,5 @@ class AttendanceRecord extends Model {
     public function session(): BelongsTo { return $this->belongsTo(AttendanceSession::class, 'attendance_session_id'); }
     public function student(): BelongsTo { return $this->belongsTo(Student::class); }
     public function marker(): BelongsTo { return $this->belongsTo(User::class, 'marked_by'); }
+    public function followUp(): \Illuminate\Database\Eloquent\Relations\HasOne { return $this->hasOne(AbsenceFollowUp::class); }
 }

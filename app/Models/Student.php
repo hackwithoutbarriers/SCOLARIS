@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Student extends Model
 {
     use HasFactory, BelongsToSchool, Auditable;
-    protected $fillable = ['school_id', 'student_number', 'admission_number', 'card_token', 'first_name', 'last_name', 'middle_name', 'date_of_birth', 'gender', 'email', 'phone', 'address', 'status', 'photo_path', 'active'];
+    protected $fillable = ['school_id', 'student_number', 'admission_number', 'card_token', 'first_name', 'last_name', 'middle_name', 'date_of_birth', 'place_of_birth', 'gender', 'email', 'phone', 'address', 'status', 'photo_path', 'active'];
     protected function casts(): array { return ['date_of_birth' => 'date']; }
     protected $appends = ['full_name'];
     public function getFullNameAttribute(): string { return trim(implode(' ', array_filter([$this->first_name, $this->middle_name, $this->last_name]))); }
@@ -37,6 +38,8 @@ class Student extends Model
     public function guardians(): BelongsToMany { return $this->belongsToMany(Guardian::class, 'guardian_student')->withPivot('is_primary', 'receives_sms', 'receives_whatsapp')->withTimestamps(); }
     public function primaryGuardian(): BelongsToMany { return $this->guardians()->wherePivot('is_primary', true); }
     public function enrollments(): HasMany { return $this->hasMany(Enrollment::class); }
+    public function currentEnrollment(): HasOne { return $this->hasOne(Enrollment::class)->where('status', 'active')->latestOfMany(); }
+    public function getPrimaryGuardianPhoneAttribute(): ?string { return $this->primaryGuardian()->value('phone'); }
     public function grades(): HasMany { return $this->hasMany(Grade::class); }
     public function reportCards(): HasMany { return $this->hasMany(ReportCard::class); }
     public function appreciations(): HasMany { return $this->hasMany(Appreciation::class); }
