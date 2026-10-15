@@ -1,10 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@import 'tailwindcss' source(none);
+
+@source '../views/filament/**/*.blade.php';
+@source '../../app/Filament/**/*.php';
+
+@theme {
+    --color-primary-50: #e8f1fa;
+    --color-primary-100: #d5e4f4;
+    --color-primary-200: #b4cde8;
+    --color-primary-300: #8eafd6;
+    --color-primary-400: #668fc0;
+    --color-primary-500: #4773a4;
+    --color-primary-600: #315984;
+    --color-primary-700: #173b67;
+    --color-primary-800: #102d50;
+    --color-primary-900: #0b203a;
+    --color-primary-950: #061326;
+}
 
 /* Visual layer only: Filament's own CSS remains responsible for layout and breakpoints. */
 .fi-body {
     font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
     background: #f4f7fb;
     color: #152238;
+    font-variant-numeric: proportional-nums;
 }
 
 .fi-body h1,
@@ -32,7 +51,27 @@
 
 .fi-sidebar-item:hover,
 .fi-sidebar-item.fi-active {
-    background: rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .18);
+}
+
+.fi-sidebar-item-label,
+.fi-sidebar-group-label,
+.fi-sidebar-item-icon {
+    color: #f8fbff;
+}
+
+.fi-sidebar-group-label {
+    font-weight: 800;
+    letter-spacing: .045em;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-label,
+.fi-sidebar-item.fi-active .fi-sidebar-item-icon {
+    color: #ffffff;
+}
+
+.fi-sidebar-item.fi-active {
+    box-shadow: inset 3px 0 0 #f0c96a;
 }
 
 .fi-topbar {
@@ -56,11 +95,74 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    content: '';
-    opacity: .28;
+    content: none;
+    opacity: .2;
     background-image: radial-gradient(rgba(23, 59, 103, .12) 1px, transparent 1px);
     background-size: 22px 22px;
     mask-image: linear-gradient(to bottom, black, transparent 70%);
+}
+
+body.has-decor .fi-main-content::before {
+    content: '';
+}
+
+.scolaris-context-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 2.75rem;
+    margin-block: .75rem 1rem;
+    padding: .55rem .9rem;
+    border: 1px solid rgba(23, 59, 103, .12);
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .86);
+    color: #152238;
+    box-shadow: 0 6px 18px rgba(23, 59, 103, .06);
+}
+
+.scolaris-context-bar__school {
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.scolaris-context-bar__school strong {
+    overflow: hidden;
+    color: #173b67;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.scolaris-context-bar__label {
+    color: #53657d;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.scolaris-role-chip {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--role-accent) 35%, white);
+    border-radius: 999px;
+    padding: .25rem .7rem;
+    background: #e8f1fa;
+    color: #173b67;
+    font-size: .8125rem;
+    font-weight: 700;
+}
+
+.scolaris-role-chip__dot {
+    width: .5rem;
+    height: .5rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: var(--role-accent);
 }
 
 .fi-main-content > * {
@@ -108,7 +210,7 @@
 }
 
 .fi-wi-stats-overview-stat-icon {
-    color: #d6a84f;
+    color: #8a5a00;
 }
 
 .fi-wi-stats-overview-stat-chart {
@@ -124,6 +226,40 @@
 .premium-card {
     border: 1px solid rgba(23, 59, 103, .09);
     box-shadow: 0 18px 50px rgba(23, 59, 103, .08);
+}
+
+.absence-worklist {
+    min-width: 0;
+}
+
+.absence-worklist .premium-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.absence-worklist .fi-input {
+    min-width: 0;
+    border-color: #cbd5e1;
+    background: #fff;
+    color: #152238;
+}
+
+.absence-worklist .fi-input:focus {
+    border-color: #173b67;
+    box-shadow: 0 0 0 2px rgba(23, 59, 103, .16);
+}
+
+@media (max-width: 767px) {
+    .absence-worklist .premium-card {
+        border-radius: .9rem;
+        box-shadow: 0 8px 24px rgba(23, 59, 103, .07);
+    }
+
+    .absence-worklist a,
+    .absence-worklist button {
+        max-width: 100%;
+        white-space: normal;
+    }
 }
 
 .premium-button {
@@ -155,6 +291,82 @@
     box-shadow: 0 12px 36px rgba(23, 59, 103, .06);
 }
 
+.fi-ta-table tbody tr:nth-child(even) {
+    background-color: rgba(232, 241, 250, .34);
+}
+
+.fi-main-content table tbody tr:nth-child(even) {
+    background-color: rgba(232, 241, 250, .34);
+}
+
+.scolaris-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    border-radius: 999px;
+    padding: .2rem .6rem;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.scolaris-status--danger { background: #fde2e5; color: #8b1e2d; }
+.scolaris-status--warning { background: #fff0d8; color: #70400b; }
+.scolaris-status--info { background: #e8f1fa; color: #173b67; }
+.scolaris-status--success { background: #d8f3e9; color: #075c45; }
+
+.fi-ta-table td,
+.fi-ta-table th,
+.fi-wi-stats-overview-stat-value,
+[data-numeric],
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+.fi-btn,
+.fi-input,
+.fi-select,
+.fi-checkbox,
+.fi-radio {
+    min-height: 2.75rem;
+}
+
+.fi-btn {
+    min-width: 2.75rem;
+}
+
+.fi-btn.fi-color-primary,
+.fi-btn.fi-color-success,
+.fi-btn.fi-color-danger,
+.fi-btn.fi-color-warning {
+    color: #fff;
+}
+
+.fi-badge.fi-color-success {
+    color: #075c45;
+    background-color: #d8f3e9;
+}
+
+.fi-badge.fi-color-warning {
+    color: #70400b;
+    background-color: #fff0d8;
+}
+
+.fi-badge.fi-color-danger {
+    color: #8b1e2d;
+    background-color: #fde2e5;
+}
+
+.fi-badge {
+    font-weight: 700;
+}
+
+.fi-ta-header-cell,
+.fi-fo-field-wrp label,
+.fi-section-header-heading {
+    color: #173b67;
+    font-weight: 700;
+}
+
 .fi-btn.fi-color-primary {
     box-shadow: 0 8px 18px rgba(23, 59, 103, .16);
 }
@@ -181,6 +393,12 @@
 
     .fi-simple-main {
         box-shadow: 0 14px 36px rgba(23, 59, 103, .1);
+    }
+
+    .scolaris-context-bar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: .45rem;
     }
 }
 

@@ -10,5 +10,12 @@
                 <div class="rounded-2xl {{ $color }} p-5"><span class="block text-xs text-gray-600">{{ $label }}</span><strong class="mt-2 block text-xl text-primary-700">{{ number_format($value, 0, ',', ' ') }} FCFA</strong></div>
             @endforeach
         </div>
+        @if ($closure = $this->getClosure())
+            <div class="rounded-2xl border border-primary-100 bg-primary-50 p-5 text-sm text-primary-900">
+                <strong>Clôture : {{ $closure->status === 'closed' ? 'Validée' : 'En attente de validation' }}</strong>
+                <span class="ml-2">Solde physique : {{ number_format($closure->physical_balance, 0, ',', ' ') }} FCFA</span>
+                <span class="ml-2">Écart : {{ number_format($closure->variance, 0, ',', ' ') }} FCFA</span>
+            </div>
+        @endif
     </div>
 </x-filament-panels::page>

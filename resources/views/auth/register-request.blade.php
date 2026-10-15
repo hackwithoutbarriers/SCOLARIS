@@ -13,44 +13,43 @@
     </div>
     <section class="premium-card rounded-[1.75rem] bg-white/90 p-6 backdrop-blur sm:p-10">
     <div class="mb-8"><span class="text-xs font-extrabold uppercase tracking-[0.2em] text-scolaris-accent">SCOLARIS</span><h1 class="mt-3 text-3xl font-extrabold text-scolaris-primary">Demander un accès</h1></div>
-        <p class="mt-2 text-sm text-slate-600">Les directeurs sont validés par l’administrateur de la plateforme. Les autres rôles sont validés par le directeur de leur école.</p>
+        <p class="mt-2 text-sm text-slate-600">Les directeurs sont validés par l’administrateur de la plateforme. Le personnel est invité directement par le responsable de son école.</p>
         @if (session('status')) <div class="mt-4 rounded-xl bg-emerald-50 p-3 text-emerald-800">{{ session('status') }}</div> @endif
         @if ($errors->any()) <div class="mt-4 rounded-xl bg-red-50 p-3 text-red-800"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
         <form method="POST" action="{{ route('registration-requests.store') }}" class="mt-6 grid gap-4">
             @csrf
+            <fieldset class="grid gap-3">
+                <legend class="font-bold text-scolaris-primary">Votre démarche</legend>
+                <label class="flex items-start gap-3 rounded-xl border p-3"><input type="radio" name="request_type" value="new_school" @checked(old('request_type', 'new_school') === 'new_school')> <span><strong>Créer l’accès de mon école</strong><small class="block text-sm text-slate-600">Pour une école qui ne possède pas encore de compte Scolaris.</small></span></label>
+                <label class="flex items-start gap-3 rounded-xl border p-3"><input type="radio" name="request_type" value="existing_school" @checked(old('request_type') === 'existing_school')> <span><strong>Rejoindre une école existante</strong><small class="block text-sm text-slate-600">Votre demande sera vérifiée par le responsable de l’école.</small></span></label>
+            </fieldset>
             <input name="name" value="{{ old('name') }}" placeholder="Nom complet" required class="rounded-xl border p-3">
-            <input type="email" name="email" value="{{ old('email') }}" placeholder="Email professionnel" required class="rounded-xl border p-3">
-            <input name="phone" value="{{ old('phone') }}" placeholder="Téléphone (optionnel)" class="rounded-xl border p-3">
-            <select name="requested_role" required class="rounded-xl border p-3"><option value="">Rôle demandé</option><option value="director">Directeur</option><option value="teacher">Enseignant</option><option value="accountant">Comptable</option></select>
-            <select name="school_id" class="rounded-xl border p-3"><option value="">École (obligatoire hors directeur)</option>@foreach (\App\Models\School::query()->where('active', true)->orderBy('name')->get() as $school)<option value="{{ $school->id }}" @selected(old('school_id') == $school->id)>{{ $school->name }}</option>@endforeach</select>
-            <input name="school_name" value="{{ old('school_name') }}" placeholder="Nom de l'école (obligatoire pour un directeur)" class="rounded-xl border p-3">
-            <input name="school_code" value="{{ old('school_code') }}" placeholder="Code école (optionnel)" class="rounded-xl border p-3">
-            <label class="grid gap-1 text-sm font-medium">Mot de passe
-                <input id="password" type="password" name="password" placeholder="Mot de passe fort" required class="rounded-xl border p-3">
-            </label>
-            <ul id="password-rules" class="text-xs text-slate-600">
-                <li data-rule="length">12 caractères minimum</li>
-                <li data-rule="case">Une majuscule et une minuscule</li>
-                <li data-rule="number">Un chiffre</li>
-                <li data-rule="symbol">Un symbole</li>
-            </ul>
-            <input type="password" name="password_confirmation" placeholder="Confirmer le mot de passe" required class="rounded-xl border p-3">
+            <div class="grid gap-2 sm:grid-cols-2">
+                <input type="email" name="email" value="{{ old('email') }}" placeholder="E-mail professionnel (optionnel si WhatsApp)" class="rounded-xl border p-3">
+                <input name="phone" value="{{ old('phone') }}" placeholder="Téléphone / WhatsApp (optionnel si e-mail)" class="rounded-xl border p-3">
+            </div>
+            <p class="text-xs text-slate-600">Indiquez au moins un moyen de contact. Le canal disponible sera utilisé après validation.</p>
+            <input type="hidden" name="requested_role" value="director">
+            <input name="school_name" value="{{ old('school_name') }}" placeholder="Nom de l'école" required class="rounded-xl border p-3">
+            <input name="school_code" value="{{ old('school_code') }}" placeholder="Code école (obligatoire pour une école existante)" class="rounded-xl border p-3">
+            <input name="city" value="{{ old('city') }}" placeholder="Ville (facultatif)" class="rounded-xl border p-3">
+            <textarea name="message" placeholder="Message ou précision (facultatif)" class="rounded-xl border p-3">{{ old('message') }}</textarea>
             <button class="premium-button rounded-xl bg-scolaris-primary p-3.5 font-bold text-white hover:bg-[#102d50]">Envoyer la demande <span aria-hidden="true">→</span></button>
         </form>
         <script>
-            const password = document.querySelector('#password');
-            password.addEventListener('input', () => {
-                const value = password.value;
-                const checks = {
-                    length: value.length >= 12,
-                    case: /[a-z]/.test(value) && /[A-Z]/.test(value),
-                    number: /\d/.test(value),
-                    symbol: /[^A-Za-z0-9]/.test(value),
-                };
-                Object.entries(checks).forEach(([name, valid]) => {
-                    document.querySelector(`[data-rule="${name}"]`).className = valid ? 'text-emerald-700' : 'text-slate-600';
-                });
-            });
+            const typeInputs = document.querySelectorAll('input[name="request_type"]');
+            const schoolCode = document.querySelector('input[name="school_code"]');
+            const email = document.querySelector('input[name="email"]');
+            const phone = document.querySelector('input[name="phone"]');
+            const syncRequirements = () => {
+                const existing = document.querySelector('input[name="request_type"]:checked')?.value === 'existing_school';
+                schoolCode.required = existing;
+                email.required = !phone.value.trim();
+                phone.required = !email.value.trim();
+            };
+            typeInputs.forEach((input) => input.addEventListener('change', syncRequirements));
+            [email, phone].forEach((input) => input.addEventListener('input', syncRequirements));
+            syncRequirements();
         </script>
         <a class="mt-4 inline-block text-sm text-scolaris-primary" href="{{ url('/admin/login') }}">Retour à la connexion</a>
     </section>

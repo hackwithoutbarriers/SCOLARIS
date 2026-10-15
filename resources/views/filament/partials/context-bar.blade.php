@@ -14,7 +14,13 @@
 <div class="scolaris-context-bar" role="status" aria-label="Contexte de session">
     <div class="scolaris-context-bar__school">
         <span class="scolaris-context-bar__label">Établissement</span>
-        <strong>{{ $user?->school?->name ?? 'Administration Scolaris' }}</strong>
+        <strong>
+            @if ($user?->isSuperAdmin() && session('scolaris_intervention.school_id'))
+                Intervention SaaS — {{ \App\Models\School::find(session('scolaris_intervention.school_id'))?->name }}
+            @else
+                {{ $user?->school?->name ?? 'Administration Scolaris' }}
+            @endif
+        </strong>
     </div>
     @if ($user)
         @php

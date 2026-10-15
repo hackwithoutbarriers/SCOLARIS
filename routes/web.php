@@ -3,9 +3,11 @@
 use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegistrationRequestController;
 use App\Http\Controllers\StudentRegistryController;
 use App\Http\Controllers\StudentCardController;
+use App\Http\Controllers\StaffInvitationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
@@ -19,8 +21,14 @@ Route::redirect('/login', '/admin/login', 302);
 Route::get('/language/{locale}', [\App\Http\Controllers\LocaleController::class, 'update'])->name('locale.update');
 Route::get('/register', [RegistrationRequestController::class, 'create'])->name('registration-requests.create');
 Route::post('/register', [RegistrationRequestController::class, 'store'])->middleware('throttle:5,60')->name('registration-requests.store');
+Route::get('/invitations/{token}', [StaffInvitationController::class, 'create'])->name('staff-invitations.accept');
+Route::post('/invitations/{token}', [StaffInvitationController::class, 'store'])->middleware('throttle:5,60');
+Route::middleware('auth')->group(function (): void {
+    Route::get('/password/change', [\App\Http\Controllers\PasswordChangeController::class, 'create'])->name('password.change');
+    Route::post('/password/change', [\App\Http\Controllers\PasswordChangeController::class, 'store'])->name('password.change.store');
+});
 
-Route::middleware('auth')->get('/teacher/attendance', fn () => view('teacher.attendance'));
+Route::middleware(['auth', 'active'])->get('/teacher/attendance', fn () => view('teacher.attendance'));
 
 Route::middleware(['auth', 'active', 'throttle:120,1'])->prefix('api')->group(function () {
     Route::get('teacher/classes', [AttendanceController::class, 'classes']);
@@ -46,9 +54,11 @@ Route::post('api/payments/webhooks/{provider}', [PaymentController::class, 'webh
 Route::post('webhooks/twilio/whatsapp', [PaymentController::class, 'twilioWhatsappStatus'])
     ->name('webhooks.twilio.whatsapp');
 
-Route::middleware('auth')->get('/report-cards/{reportCard}/html', [AcademicController::class, 'reportCardHtml'])->name('report-cards.html');
-Route::middleware('auth')->get('/report-cards/{reportCard}/pdf', [AcademicController::class, 'reportCardPdf'])->name('report-cards.pdf');
-Route::middleware('auth')->get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+Route::middleware(['auth', 'active'])->get('/report-cards/{reportCard}/html', [AcademicController::class, 'reportCardHtml'])->name('report-cards.html');
+Route::middleware(['auth', 'active'])->get('/report-cards/{reportCard}/pdf', [AcademicController::class, 'reportCardPdf'])->name('report-cards.pdf');
+Route::middleware(['auth', 'active'])->get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+Route::middleware(['auth', 'active', 'signed'])->get('/notifications/whatsapp/{guardian}/{template}', [NotificationController::class, 'whatsapp'])->name('notifications.whatsapp');
+Route::middleware(['auth', 'active', 'signed'])->get('/notifications/email/{guardian}/{template}', [NotificationController::class, 'email'])->name('notifications.email');
 Route::middleware(['auth', 'active'])->prefix('student-registry')->group(function (): void {
     Route::get('/csv', [StudentRegistryController::class, 'csv'])->name('students.registry.csv');
     Route::get('/pdf', [StudentRegistryController::class, 'pdf'])->name('students.registry.pdf');
