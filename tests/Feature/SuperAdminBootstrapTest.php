@@ -27,4 +27,27 @@ class SuperAdminBootstrapTest extends TestCase
         $this->assertTrue($owner->isSuperAdmin());
         $this->assertTrue($owner->is_active);
     }
+
+    public function test_bootstrap_command_is_safe_to_run_again_without_changing_the_account(): void
+    {
+        $this->artisan('scolaris:create-super-admin', [
+            'email' => 'owner@example.com',
+            '--name' => 'SaaS Owner',
+            '--password' => 'Secure-password-123!',
+            '--no-interaction' => true,
+        ])->assertExitCode(0);
+
+        $owner = User::withoutGlobalScopes()->where('email', 'owner@example.com')->firstOrFail();
+        $originalHash = $owner->password;
+
+        $this->artisan('scolaris:create-super-admin', [
+            'email' => 'owner@example.com',
+            '--name' => 'Changed Name',
+            '--password' => 'Another-password-456!',
+            '--no-interaction' => true,
+        ])->assertExitCode(0);
+
+        $this->assertSame($originalHash, $owner->fresh()->password);
+        $this->assertSame('SaaS Owner', $owner->fresh()->name);
+    }
 }

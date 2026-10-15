@@ -18,6 +18,10 @@ npm run build
 php artisan serve
 ```
 
+L’installation et le seed ci-dessus sont réservés à une base locale vide.
+N’exécutez pas de migrations contre une base réelle avant d’avoir vérifié la
+connexion et l’état de la base.
+
 Pour le développement rapide, SQLite est accepté. La validation de production doit utiliser PostgreSQL avec l'extension PHP `pdo_pgsql` activée :
 
 ```dotenv
@@ -72,11 +76,15 @@ Voir [docs/architecture.md](docs/architecture.md).
 
 ```bash
 php artisan test
-php artisan migrate:fresh --seed
+php artisan migrate --seed
+php artisan migrate:status
 php artisan queue:work
 php artisan schedule:work
 php artisan route:list
 ```
+
+`migrate --seed` est réservé à une base locale vide ou de test. Ne lancez jamais
+`migrate:fresh` sur une base contenant des données à conserver.
 
 ## Production Deployment — Render
 
@@ -148,12 +156,11 @@ SCOLARIS_OWNER_NAME="Votre Nom" # optionnel
 SCOLARIS_OWNER_PASSWORD="un-secret-d'au-moins-12-caracteres"
 ```
 
-Après le déploiement, exécuter une seule fois depuis le Shell Render
-`php artisan scolaris:create-super-admin` après avoir défini ces variables.
-Le démarrage Docker n’exécute pas cette commande automatiquement afin de ne
-pas réinitialiser ou recréer un compte administrateur à chaque redémarrage.
-Le mot de passe doit être enregistré comme secret Render et ne doit jamais
-être committé. Ne pas utiliser `admin@example.com / password` en production.
+Le démarrage Docker exécute cette commande avec ces variables. La commande est
+idempotente : si le compte existe déjà, elle ne modifie pas son mot de passe
+sans l’option explicite `--force`. Le mot de passe doit être enregistré comme
+secret Render et ne doit jamais être committé. Ne pas utiliser
+`admin@example.com / password` en production.
 
 ### Demandes de comptes et sécurité
 
@@ -182,3 +189,53 @@ php artisan test tests/Feature/NotificationProviderRetryTest.php
 ```
 
 Le dashboard Filament du Directeur expose les filtres date/classe et les statistiques présence. Le test navigateur hors ligne se fait sur `/teacher/attendance` : charger la classe, couper le réseau, modifier, recharger, puis rétablir le réseau et vérifier la synchronisation.
+
+
+
+
+
+
+
+## Documentation de reprise
+
+- [docs/acl-matrix.md](docs/acl-matrix.md) — matrice d’accès par rôle et ressources critiques.
+- [docs/roles/directeur.md](docs/roles/directeur.md) — guide directeur.
+- [docs/roles/enseignant.md](docs/roles/enseignant.md) — guide enseignant.
+- [docs/roles/comptable.md](docs/roles/comptable.md) — guide comptable.
+- [docs/roles/censeur.md](docs/roles/censeur.md) — guide censeur.
+- [docs/roles/secretaire.md](docs/roles/secretaire.md) — guide secrétaire.
+- [docs/roles/super-admin.md](docs/roles/super-admin.md) — guide super administrateur.
+- [docs/production-checklist.md](docs/production-checklist.md) — checklist de mise en production.
+
+### Exemples de comptes de démo
+
+Mot de passe commun : DemoScolaris!2026
+
+direction@demo.scolaris.test
+secretariat@demo.scolaris.test
+caisse@demo.scolaris.test
+
+### Variables clés de production
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://votre-domaine.example
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=lax
+MAIL_MAILER=smtp
+MAIL_HOST=mail.votre-hebergeur.tg
+MAIL_PORT=587
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+MAIL_FROM_ADDRESS="contact@votre-ecole.tg"
+MAIL_FROM_NAME="École Demo"
+QUEUE_CONNECTION=database
+FILESYSTEM_DISK=s3
+DB_CONNECTION=pgsql
+DB_SSLMODE=require
+```
+
+Pour les écoles qui configurent leur propre SMTP, les identifiants sont stockés dans les champs `mail_*` de l’école et cryptés côté application. Les e-mails ne doivent jamais être exposés en clair dans les logs ni dans les exports.
+
+Le module WhatsApp est un canal de génération de lien Click-to-Chat manuel et ne doit pas être présenté comme une livraison automatique. Les intégrations payantes (Twilio, Meta, etc.) restent désactivées tant qu’un test de signature, de callback et de conformité n’a pas été validé.

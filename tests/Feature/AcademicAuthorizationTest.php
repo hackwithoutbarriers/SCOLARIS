@@ -2,18 +2,20 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\ReportCardResource;
 use App\Models\AcademicYear;
 use App\Models\Assessment;
 use App\Models\ClassRoom;
 use App\Models\Enrollment;
-use App\Models\ReportCard;
+use App\Models\Grade;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\SubjectConfig;
-use App\Models\Term;
 use App\Models\TeacherAssignment;
+use App\Models\Term;
 use App\Models\User;
+use App\Services\ReportCardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,9 +31,15 @@ class AcademicAuthorizationTest extends TestCase
         $assessment = Assessment::create(['school_id' => $school->id, 'subject_config_id' => $config->id, 'term_id' => $term->id, 'teacher_id' => $teacher->id, 'title' => 'Devoir', 'max_score' => 20, 'weight' => 1]);
         $otherTeacher = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
         $otherAssessment = Assessment::create(['school_id' => $school->id, 'subject_config_id' => $config->id, 'term_id' => $term->id, 'teacher_id' => $otherTeacher->id, 'title' => 'Autre devoir', 'max_score' => 20, 'weight' => 1]);
+        Grade::create(['school_id' => $school->id, 'assessment_id' => $assessment->id, 'student_id' => $student->id, 'score' => 12]);
+        Grade::create(['school_id' => $school->id, 'assessment_id' => $otherAssessment->id, 'student_id' => $student->id, 'score' => 18]);
         $this->actingAs($teacher);
 
-        $this->getJson("/api/academic/students/{$student->id}/grades/{$term->id}")->assertOk();
+        $grades = $this->getJson("/api/academic/students/{$student->id}/grades/{$term->id}")
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'Devoir'])
+            ->assertJsonMissing(['title' => 'Autre devoir']);
+        $this->assertNull($grades->json('academic_mention'));
         $this->getJson("/api/academic/students/{$otherStudent->id}/grades/{$term->id}")->assertForbidden();
         $this->postJson("/api/academic/assessments/{$assessment->id}/grades", ['student_id' => $student->id, 'score' => 15])->assertCreated();
         $this->postJson("/api/academic/assessments/{$otherAssessment->id}/grades", ['student_id' => $student->id, 'score' => 15])->assertForbidden();
@@ -55,7 +63,7 @@ class AcademicAuthorizationTest extends TestCase
     public function test_report_card_requires_school_and_student_relationship(): void
     {
         [$school, $year, $term, $subject, $teacher, $class, $student] = $this->academicFixture();
-        $card = app(\App\Services\ReportCardService::class)->generate($student, $year, $term);
+        $card = app(ReportCardService::class)->generate($student, $year, $term);
         $this->actingAs($teacher);
 
         $this->get(route('report-cards.html', $card))->assertOk();
@@ -63,20 +71,66 @@ class AcademicAuthorizationTest extends TestCase
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
         $unrelated = Student::factory()->create(['school_id' => $school->id]);
-        $otherCard = app(\App\Services\ReportCardService::class)->generate($unrelated, $year, $term);
+        $otherCard = app(ReportCardService::class)->generate($unrelated, $year, $term);
         $this->get(route('report-cards.html', $otherCard))->assertForbidden();
         $this->get(route('report-cards.pdf', $otherCard))->assertForbidden();
     }
 
-    public function test_director_delete_authorization_is_scoped_to_their_school(): void
+    public function test_teacher_report_card_access_is_limited_to_assigned_academic_year(): void
+    {
+        [$school, $year, $term, $subject, $teacher, $class, $student] = $this->academicFixture();
+        $currentCard = app(ReportCardService::class)->generate($student, $year, $term);
+
+        $previousYear = AcademicYear::create([
+            'school_id' => $school->id,
+            'name' => '2025-2026',
+            'starts_at' => '2025-09-01',
+            'ends_at' => '2026-08-31',
+        ]);
+        $previousTerm = Term::create([
+            'school_id' => $school->id,
+            'academic_year_id' => $previousYear->id,
+            'name' => 'Term 3',
+            'starts_at' => '2026-04-01',
+            'ends_at' => '2026-08-31',
+            'sort_order' => 3,
+        ]);
+        $previousClass = ClassRoom::create([
+            'school_id' => $school->id,
+            'academic_year_id' => $previousYear->id,
+            'name' => 'Ancienne classe',
+            'capacity' => 30,
+        ]);
+        Enrollment::create([
+            'school_id' => $school->id,
+            'student_id' => $student->id,
+            'class_room_id' => $previousClass->id,
+            'academic_year_id' => $previousYear->id,
+            'enrollment_date' => '2025-09-01',
+            'status' => 'active',
+        ]);
+        $previousCard = app(ReportCardService::class)->generate($student, $previousYear, $previousTerm);
+
+        $this->actingAs($teacher);
+
+        $this->get(route('report-cards.html', $currentCard))->assertOk();
+        $this->get(route('report-cards.html', $previousCard))->assertForbidden();
+        $this->getJson("/api/academic/students/{$student->id}/grades/{$previousTerm->id}")->assertForbidden();
+        $this->assertContains($currentCard->id, ReportCardResource::getEloquentQuery()->pluck('id')->all());
+        $this->assertNotContains($previousCard->id, ReportCardResource::getEloquentQuery()->pluck('id')->all());
+    }
+
+    public function test_student_records_cannot_be_deleted_by_directors_or_secretaries(): void
     {
         $school = School::factory()->create();
         $otherSchool = School::factory()->create();
         $director = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
+        $secretary = User::factory()->create(['school_id' => $school->id, 'role' => 'secretary']);
         $student = Student::factory()->create(['school_id' => $school->id]);
         $otherStudent = Student::factory()->create(['school_id' => $otherSchool->id]);
 
-        $this->assertTrue($director->can('delete', $student));
+        $this->assertFalse($director->can('delete', $student));
+        $this->assertFalse($secretary->can('delete', $student));
         $this->assertFalse($director->can('delete', $otherStudent));
     }
 

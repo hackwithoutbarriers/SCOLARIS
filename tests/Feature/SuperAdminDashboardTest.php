@@ -29,7 +29,8 @@ class SuperAdminDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin/school-support')
             ->assertOk()
-            ->assertSee('Intervenir pour une école');
+            ->assertSee('Intervenir pour une école')
+            ->assertSee('Ouvrez un contexte temporaire avant de consulter les données de cette école.');
     }
 
     public function test_school_support_is_not_available_to_school_users(): void

@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\Payments\CollectionService;
 use App\Services\Payments\InvoiceService;
 use App\Services\Payments\PaymentService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -81,17 +82,58 @@ class FinanceWorkflowTest extends TestCase
     public function test_reversal_preserves_original_payment_and_reopens_balance(): void
     {
         $school = School::factory()->create();
-        $this->actingAs(User::factory()->create(['school_id' => $school->id, 'role' => 'accountant']));
+        $accountant = User::factory()->create(['school_id' => $school->id, 'role' => 'accountant']);
+        $this->actingAs($accountant);
         $year = AcademicYear::factory()->create(['school_id' => $school->id]);
         $student = Student::factory()->create(['school_id' => $school->id]);
         $structure = FeeStructure::create(['school_id' => $school->id, 'academic_year_id' => $year->id, 'name' => 'Reversal']);
         Fee::create(['school_id' => $school->id, 'fee_structure_id' => $structure->id, 'name' => 'Fee', 'amount' => 100000, 'type' => 'tuition']);
         $invoice = app(InvoiceService::class)->generateForStudent($structure, $student);
         $payment = app(PaymentService::class)->recordManual(['school_id' => $school->id, 'student_id' => $student->id, 'amount' => 100000, 'payment_method' => 'CASH', 'idempotency_key' => 'reversal']);
+
+        $this->assertFalse($accountant->can('reverse', $payment));
+        try {
+            app(PaymentService::class)->reverse($payment, 40000, 'Correction de caisse');
+            $this->fail('Un comptable ne doit pas pouvoir reverser un paiement.');
+        } catch (AuthorizationException) {
+            $this->assertDatabaseCount('payment_reversals', 0);
+        }
+
+        $this->actingAs(User::factory()->create(['school_id' => $school->id, 'role' => 'director']));
         app(PaymentService::class)->reverse($payment, 40000, 'Correction de caisse');
         $this->assertDatabaseHas('payment_reversals', ['payment_id' => $payment->id, 'amount' => 40000]);
         $this->assertSame(40000, $invoice->fresh()->balance());
         $this->assertDatabaseHas('audit_logs', ['auditable_type' => PaymentReversal::class, 'action' => 'created']);
+    }
+
+    public function test_payments_are_immutable_and_can_only_be_corrected_by_reversal(): void
+    {
+        $school = School::factory()->create();
+        $payment = Payment::create([
+            'school_id' => $school->id,
+            'student_id' => Student::factory()->create(['school_id' => $school->id])->id,
+            'amount' => 10000,
+            'payment_method' => 'CASH',
+            'status' => Payment::CONFIRMED,
+            'paid_at' => now(),
+        ]);
+
+        foreach (['accountant', 'director'] as $role) {
+            $user = User::factory()->create([
+                'school_id' => $school->id,
+                'role' => $role,
+            ]);
+            $this->assertFalse($user->can('update', $payment));
+            $this->assertFalse($user->can('delete', $payment));
+        }
+
+        $admin = User::factory()->create(['school_id' => null, 'role' => 'super_admin']);
+        $this->withSession([
+            'scolaris_intervention.school_id' => $school->id,
+            'scolaris_intervention.expires_at' => now()->addHour()->timestamp,
+        ]);
+        $this->assertFalse($admin->can('update', $payment));
+        $this->assertFalse($admin->can('delete', $payment));
     }
 
     public function test_collection_reminders_are_scheduled_and_idempotent(): void

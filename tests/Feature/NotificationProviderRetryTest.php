@@ -6,8 +6,10 @@ use App\Models\Guardian;
 use App\Models\NotificationQueue;
 use App\Models\School;
 use App\Models\Student;
+use App\Services\MockNotificationProvider;
 use App\Services\NotificationProvider;
 use App\Services\NotificationService;
+use App\Services\WhatsAppNotificationProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -15,6 +17,23 @@ use Tests\TestCase;
 class NotificationProviderRetryTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_twilio_is_not_selected_from_credentials_without_explicit_provider_configuration(): void
+    {
+        config([
+            'attendance.notifications.provider' => 'mock',
+            'attendance.notifications.default_channel' => 'whatsapp',
+            'services.twilio.sid' => 'AC-test',
+        ]);
+        app()->forgetInstance(NotificationProvider::class);
+
+        $this->assertInstanceOf(MockNotificationProvider::class, app(NotificationProvider::class));
+
+        config(['attendance.notifications.provider' => 'twilio']);
+        app()->forgetInstance(NotificationProvider::class);
+
+        $this->assertInstanceOf(WhatsAppNotificationProvider::class, app(NotificationProvider::class));
+    }
 
     public function test_http_provider_retries_then_sends(): void
     {

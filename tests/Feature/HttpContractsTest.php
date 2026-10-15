@@ -18,12 +18,18 @@ class HttpContractsTest extends TestCase
             ->assertJsonStructure(['message']);
     }
 
-    public function test_inactive_users_are_rejected_by_api_middleware(): void
+    public function test_inactive_users_are_rejected_and_their_session_is_invalidated(): void
     {
         $school = School::factory()->create();
         $user = User::factory()->create(['school_id' => $school->id, 'is_active' => false]);
 
-        $this->actingAs($user)->getJson('/api/attendance/sessions')->assertForbidden();
+        $this->actingAs($user)
+            ->withSession(['session_marker' => 'should-be-removed'])
+            ->getJson('/api/attendance/sessions')
+            ->assertForbidden()
+            ->assertSessionMissing('session_marker');
+
+        $this->getJson('/api/attendance/sessions')->assertUnauthorized();
     }
 
     public function test_api_validation_not_found_and_method_contracts_are_json(): void

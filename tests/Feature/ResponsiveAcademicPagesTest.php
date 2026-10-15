@@ -18,7 +18,7 @@ class ResponsiveAcademicPagesTest extends TestCase
                 ->get('/admin/login')
                 ->assertOk()
                 ->assertSee('filament-admin-premium')
-                ->assertSee('Adresse e-mail')
+                ->assertSee('Adresse e-mail ou téléphone')
                 ->assertSee('Mot de passe');
         }
     }
@@ -43,16 +43,22 @@ class ResponsiveAcademicPagesTest extends TestCase
     public function test_finance_pages_are_available_at_all_supported_viewports(): void
     {
         $school = School::factory()->create();
-        $user = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
+        $director = User::factory()->create(['school_id' => $school->id, 'role' => 'director']);
+        $accountant = User::factory()->create(['school_id' => $school->id, 'role' => 'accountant']);
+
+        $this->actingAs($director)->get('/admin/students/create')
+            ->assertOk();
 
         foreach ([320, 375, 390, 768, 1280] as $viewport) {
             $headers = ['Viewport-Width' => (string) $viewport];
-            $this->withHeaders($headers)->actingAs($user)->get('/admin/payments')
+            $this->withHeaders($headers)->actingAs($director)->get('/admin/payments')
                 ->assertOk()->assertSee('Paiements');
-            $this->withHeaders($headers)->actingAs($user)->get('/admin/payments/create')
+            $this->withHeaders($headers)->actingAs($accountant)->get('/admin/payments/create')
                 ->assertOk()->assertSee('Montant');
-            $this->withHeaders($headers)->actingAs($user)->get('/admin/fee-structures')
+            $this->withHeaders($headers)->actingAs($director)->get('/admin/fee-structures')
                 ->assertOk()->assertSee('Grilles tarifaires');
         }
+
+        $this->actingAs($director)->get('/admin/payments/create')->assertForbidden();
     }
 }
