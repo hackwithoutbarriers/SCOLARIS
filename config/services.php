@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -8,7 +13,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This file is for storing the credentials for third party services such
-    | as Resend, Postmark, AWS, and more. This file provides the de facto
+    | as Mailgun, Postmark, AWS and more. This file provides the de facto
     | location for this type of information, allowing packages to have
     | a conventional file to locate the various service credentials.
     |
@@ -33,17 +38,6 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
-    ],
-
-    'whatsapp' => [
-        'number' => env('WHATSAPP_NUMBER', '22890585976'),
-        'webhook_url' => env('WHATSAPP_WEBHOOK_URL'),
-        'webhook_secret' => env('WHATSAPP_WEBHOOK_SECRET'),
-    ],
-
-    'google' => [
-        'key' => env('GOOGLE_PLACES_KEY'),
-        'place_id' => env('GOOGLE_PLACE_ID'),
     ],
 
 ];

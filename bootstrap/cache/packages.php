@@ -6,6 +6,18 @@
       'EloquentSerialize' => 'AnourValar\\EloquentSerialize\\Facades\\EloquentSerializeFacade',
     ),
   ),
+  'barryvdh/laravel-dompdf' => 
+  array (
+    'aliases' => 
+    array (
+      'PDF' => 'Barryvdh\\DomPDF\\Facade\\Pdf',
+      'Pdf' => 'Barryvdh\\DomPDF\\Facade\\Pdf',
+    ),
+    'providers' => 
+    array (
+      0 => 'Barryvdh\\DomPDF\\ServiceProvider',
+    ),
+  ),
   'blade-ui-kit/blade-heroicons' => 
   array (
     'providers' => 
@@ -76,40 +88,11 @@
       0 => 'Filament\\Widgets\\WidgetsServiceProvider',
     ),
   ),
-  'intervention/image-laravel' => 
-  array (
-    'aliases' => 
-    array (
-      'Image' => 'Intervention\\Image\\Laravel\\Facades\\Image',
-    ),
-    'providers' => 
-    array (
-      0 => 'Intervention\\Image\\Laravel\\ServiceProvider',
-    ),
-  ),
   'kirschbaum-development/eloquent-power-joins' => 
   array (
     'providers' => 
     array (
       0 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
-    ),
-  ),
-  'laravel/boost' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Boost\\BoostServiceProvider',
-    ),
-  ),
-  'laravel/mcp' => 
-  array (
-    'aliases' => 
-    array (
-      'Mcp' => 'Laravel\\Mcp\\Facades\\Mcp',
-    ),
-    'providers' => 
-    array (
-      0 => 'Laravel\\Mcp\\Server\\McpServiceProvider',
     ),
   ),
   'laravel/pail' => 
@@ -119,18 +102,11 @@
       0 => 'Laravel\\Pail\\PailServiceProvider',
     ),
   ),
-  'laravel/pao' => 
+  'laravel/sail' => 
   array (
     'providers' => 
     array (
-      0 => 'Laravel\\Pao\\Laravel\\ServiceProvider',
-    ),
-  ),
-  'laravel/roster' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Roster\\RosterServiceProvider',
+      0 => 'Laravel\\Sail\\SailServiceProvider',
     ),
   ),
   'laravel/tinker' => 
@@ -151,13 +127,6 @@
       0 => 'Livewire\\LivewireServiceProvider',
     ),
   ),
-  'nesbot/carbon' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Carbon\\Laravel\\ServiceProvider',
-    ),
-  ),
   'nunomaduro/collision' => 
   array (
     'providers' => 
@@ -170,17 +139,6 @@
     'providers' => 
     array (
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    ),
-  ),
-  'pragmarx/google2fa-laravel' => 
-  array (
-    'aliases' => 
-    array (
-      'Google2FA' => 'PragmaRX\\Google2FALaravel\\Facade',
-    ),
-    'providers' => 
-    array (
-      0 => 'PragmaRX\\Google2FALaravel\\ServiceProvider',
     ),
   ),
   'ryangjchandler/blade-capture-directive' => 
