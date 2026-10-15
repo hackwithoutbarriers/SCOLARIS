@@ -21,7 +21,7 @@ class PaymentService
     {
         return match ($method) {
             'CASH' => app(CashPaymentHandler::class),
-            'BANK', 'TMONEY', 'FLOOZ', 'OTHER' => app(LegacyPaymentMethodHandler::class),
+            'BANK', 'TMONEY', 'FLOOZ', 'CHEQUE', 'OTHER' => app(LegacyPaymentMethodHandler::class),
             default => throw ValidationException::withMessages(['payment_method' => 'Mode de paiement invalide.']),
         };
     }

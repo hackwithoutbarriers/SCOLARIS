@@ -7,9 +7,13 @@ use App\Models\User;
 
 class PaymentPolicy
 {
-    public function before(User $user): ?bool
+    public function before(User $user, string $ability, mixed ...$targets): ?bool
     {
-        return $user->isSuperAdmin() ? true : null;
+        if (in_array($ability, ['update', 'delete'], true)) {
+            return false;
+        }
+
+        return $user->isSuperAdmin() ? $user->canUseSchoolIntervention(...$targets) : null;
     }
 
     public function viewAny(User $user): bool
@@ -19,7 +23,7 @@ class PaymentPolicy
 
     public function view(User $user, Payment $payment): bool
     {
-        return $user->is_active && $user->isFinanceOperator() && $payment->school_id === $user->school_id;
+        return $user->isFinanceOperator() && $user->canAccessSchool((int) $payment->school_id);
     }
 
     public function create(User $user): bool
@@ -29,23 +33,19 @@ class PaymentPolicy
 
     public function update(User $user, Payment $payment): bool
     {
-        return $user->is_active && $user->isFinanceOperator() && $payment->school_id === $user->school_id;
+        return false;
     }
 
     public function delete(User $user, Payment $payment): bool
     {
-        return $user->is_active && $user->isDirector() && $payment->school_id === $user->school_id;
+        return false;
     }
 
-    /**
-     * Reversals are the safe correction mechanism. Accountants may request and
-     * execute a correction through the transactional service, while deletion
-     * remains reserved for the director.
-     */
+    /** Reversals are the audited correction mechanism and remain director-only. */
     public function reverse(User $user, Payment $payment): bool
     {
         return $user->is_active
-            && $user->isFinanceOperator()
-            && $payment->school_id === $user->school_id;
+            && ($user->isDirector() || ($user->isSuperAdmin() && $user->hasActiveSchoolIntervention((int) $payment->school_id)))
+            && $user->canAccessSchool((int) $payment->school_id);
     }
 }

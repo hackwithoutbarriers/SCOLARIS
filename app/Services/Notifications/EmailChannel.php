@@ -19,7 +19,7 @@ class EmailChannel implements NotificationChannelInterface, ShouldQueue
             $log = NotificationLog::create([
                 'school_id' => $guardian->school_id, 'student_id' => $this->studentId($guardian, $variables),
                 'guardian_id' => $guardian->id, 'channel' => 'email', 'template_code' => $templateCode,
-                'sent_by' => auth()->id(), 'status' => 'failed', 'payload' => $variables,
+                'sent_by' => auth()->id(), 'status' => 'failed', 'payload' => ['reason' => 'recipient_or_school_not_configured'],
             ]);
 
             return new NotificationResult('email', 'failed', logId: $log->id, message: 'Email non configuré pour cette école ou ce responsable.');
@@ -34,7 +34,7 @@ class EmailChannel implements NotificationChannelInterface, ShouldQueue
             'template_code' => $templateCode,
             'sent_by' => auth()->id(),
             'status' => 'queued',
-            'payload' => $variables,
+            'payload' => ['queued' => true],
         ]);
         Bus::dispatch(new SendSchoolNotificationEmail($log->id, $school->id, $template->id, $guardian->email, $body));
 

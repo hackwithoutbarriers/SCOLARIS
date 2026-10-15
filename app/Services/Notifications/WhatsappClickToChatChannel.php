@@ -18,7 +18,7 @@ class WhatsappClickToChatChannel implements NotificationChannelInterface
                 'school_id' => $guardian->school_id, 'student_id' => $this->studentId($guardian, $variables),
                 'guardian_id' => $guardian->id, 'channel' => 'whatsapp_link',
                 'template_code' => $templateCode, 'sent_by' => auth()->id(),
-                'status' => 'failed', 'payload' => $variables,
+                'status' => 'failed', 'payload' => ['reason' => 'invalid_recipient'],
             ]);
 
             return new NotificationResult('whatsapp_link', 'failed', logId: $log->id, message: 'Numéro WhatsApp absent ou invalide.');
@@ -33,7 +33,7 @@ class WhatsappClickToChatChannel implements NotificationChannelInterface
             'template_code' => $templateCode,
             'sent_by' => auth()->id(),
             'status' => 'opened',
-            'payload' => $variables,
+            'payload' => ['link_generated' => true],
         ]);
 
         return new NotificationResult(

@@ -19,7 +19,7 @@ class CashJournalService
         $receipts = (int) Payment::query()->where('school_id', $schoolId)->where('payment_method', 'CASH')
             ->where('status', Payment::CONFIRMED)->whereDate('paid_at', $date)->sum('amount');
         $expenses = (int) Expense::query()->with('reversals')->where('school_id', $schoolId)
-            ->whereDate('expense_date', $date)->get()->sum(fn (Expense $expense): int => $expense->netAmount());
+            ->whereDate('expense_date', $date)->where('approval_status', 'approved')->get()->sum(fn (Expense $expense): int => $expense->netAmount());
 
         return ['date' => $date, 'opening' => (int) $opening, 'receipts' => $receipts, 'expenses' => $expenses, 'closing' => (int) $opening + $receipts - $expenses];
     }

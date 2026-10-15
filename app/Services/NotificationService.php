@@ -60,7 +60,13 @@ class NotificationService {
 
     public function queueInvitation(StaffInvitation $invitation, string $token): NotificationQueue
     {
-        $channel = config('attendance.notifications.default_channel', 'whatsapp');
+        $channel = $invitation->preferred_channel ?: config('attendance.notifications.default_channel', 'whatsapp');
+        if ($channel === 'email' && ! $invitation->email && $invitation->phone) {
+            $channel = 'whatsapp';
+        }
+        if ($channel === 'whatsapp' && ! $invitation->phone && $invitation->email) {
+            $channel = 'email';
+        }
         if (!in_array($channel, ['email', 'whatsapp'], true)) {
             throw new \InvalidArgumentException(
                 'Le canal des invitations doit être configuré sur email ou whatsapp.'

@@ -2,14 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Assessment;
 use App\Models\AcademicYear;
+use App\Models\Assessment;
 use App\Models\Grade;
-use App\Models\Enrollment;
 use App\Models\MentionThreshold;
 use App\Models\Student;
 use App\Models\SubjectConfig;
+use App\Models\TeacherAssignment;
 use App\Models\Term;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -53,20 +54,32 @@ final class GradeCalculationService
     }
 
     /** @return array{student:array,period:array,subjects:array,summary:array,appreciation:array} */
-    public function calculate(Student|int $student, Term|int|null $term = null): array
+    public function calculate(Student|int $student, Term|int|null $term = null, ?User $teacher = null): array
     {
         $student = $student instanceof Student ? $student : Student::findOrFail($student);
         $term = is_int($term) ? Term::findOrFail($term) : $term;
-        $grades = Grade::query()
-            ->with(['assessment.subjectConfig.subject', 'assessment.term'])
-            ->where('student_id', $student->id)
-            ->when($term, fn ($query) => $query->whereHas('assessment', fn ($q) => $q->where('term_id', $term->id)))
-            ->get();
-
         $year = $term?->academicYear;
         $classRoom = $year
             ? $student->enrollments()->where('academic_year_id', $year->id)->latest('id')->first()?->classRoom
             : null;
+        $assignedSubjectIds = $teacher && $year && $classRoom
+            ? TeacherAssignment::query()
+                ->where('teacher_id', $teacher->id)
+                ->where('academic_year_id', $year->id)
+                ->where('class_room_id', $classRoom->id)
+                ->pluck('subject_id')
+            : collect();
+
+        $grades = Grade::query()
+            ->with(['assessment.subjectConfig.subject', 'assessment.term'])
+            ->where('student_id', $student->id)
+            ->when($term, fn ($query) => $query->whereHas('assessment', fn ($q) => $q->where('term_id', $term->id)))
+            ->when($teacher, fn ($query) => $query->whereHas('assessment', fn ($assessment) => $assessment
+                ->where('teacher_id', $teacher->id)
+                ->whereHas('subjectConfig', fn ($config) => $config->where('academic_year_id', $year?->id)
+                    ->whereIn('subject_id', $assignedSubjectIds))))
+            ->get();
+
         $subjects = [];
         foreach ($grades->groupBy(fn (Grade $grade) => $grade->assessment->subject_config_id) as $configGrades) {
             $assessmentConfig = $configGrades->first()->assessment->subjectConfig;
@@ -127,6 +140,16 @@ final class GradeCalculationService
     public function calculateStudent(Student|int $student, Term|int|null $term = null): array
     {
         return $this->calculate($student, $term);
+    }
+
+    public function calculateForTeacher(Student|int $student, Term|int|null $term, User $teacher): array
+    {
+        $result = $this->calculate($student, $term, $teacher);
+        $result['summary']['academic_mention'] = null;
+        $result['academic_mention'] = null;
+        $result['appreciation']['label'] = null;
+
+        return $result;
     }
 
     public function rank(Student|int $student, Term|int|null $term = null): ?int
@@ -235,6 +258,7 @@ final class GradeCalculationService
         }
         $state = $this->validationState($term);
         $hasAssessments = Assessment::query()->where('term_id', $term->id)->exists();
+
         return $hasAssessments && (! $state['valid'] || ! $term->gradesAreValidated());
     }
 
@@ -244,8 +268,10 @@ final class GradeCalculationService
             $subjects = $this->calculate($item, $term)['subjects'];
             if ($subjectId !== null) {
                 $subject = collect($subjects)->firstWhere('subject_id', $subjectId);
+
                 return [$item->id => (float) ($subject['average'] ?? 0)];
             }
+
             return [$item->id => (float) $this->calculate($item, $term)['summary']['average']];
         })->sortDesc();
         $result = [];
@@ -276,5 +302,4 @@ final class GradeCalculationService
 
         return [];
     }
-
 }

@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\TeacherAssignment;
 use App\Models\Term;
 use App\Models\User;
+use App\Support\Tenancy\SchoolContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -17,8 +18,8 @@ class AttendanceService
 {
     public function canManage(AttendanceSession $session, ?User $user): bool
     {
-        return $user && $user->school_id === $session->school_id &&
-            ($user->isAdmin() || $session->teacher_id === $user->id ||
+        return $user && $user->canAccessSchool((int) $session->school_id) &&
+            ($user->isAttendanceManager() || $session->teacher_id === $user->id ||
             TeacherAssignment::where('teacher_id', $user->id)
                 ->where('class_room_id', $session->class_room_id)
                 ->where('academic_year_id', $session->academic_year_id)
@@ -27,16 +28,18 @@ class AttendanceService
 
     public function create(array $data, User $user): AttendanceSession
     {
-        $data['school_id'] = $user->school_id;
-        $data['teacher_id'] = $user->isAdmin() && isset($data['teacher_id']) ? (int) $data['teacher_id'] : $user->id;
-        if (! User::where('id', $data['teacher_id'])->where('school_id', $user->school_id)->exists()) {
+        $schoolId = app(SchoolContext::class)->id() ?? $user->school_id;
+        abort_unless($schoolId && $user->canAccessSchool((int) $schoolId), 403);
+        $data['school_id'] = $schoolId;
+        $data['teacher_id'] = $user->isAttendanceManager() && isset($data['teacher_id']) ? (int) $data['teacher_id'] : $user->id;
+        if (! User::where('id', $data['teacher_id'])->where('school_id', $schoolId)->exists()) {
             abort(403);
         }
         $class = ClassRoom::withoutGlobalScopes()->findOrFail($data['class_room_id']);
-        abort_unless((int) $class->school_id === (int) $user->school_id, 403);
+        abort_unless((int) $class->school_id === (int) $schoolId, 403);
         $data['academic_year_id'] = $class->academic_year_id;
-        abort_unless(! Term::isClosedForDate((int) $user->school_id, (int) $data['academic_year_id'], $data['session_date'] ?? today()), 422, 'La période de présence est clôturée.');
-        if (! $user->isAdmin() && ! TeacherAssignment::where('teacher_id', $user->id)
+        abort_unless(! Term::isClosedForDate((int) $schoolId, (int) $data['academic_year_id'], $data['session_date'] ?? today()), 422, 'La période de présence est clôturée.');
+        if (! $user->isAttendanceManager() && ! TeacherAssignment::where('teacher_id', $user->id)
             ->where('class_room_id', $class->id)->where('academic_year_id', $class->academic_year_id)->exists()) {
             abort(403);
         }
@@ -109,7 +112,7 @@ class AttendanceService
 
     public function correct(AttendanceSession $session, array $records, User $user): array
     {
-        abort_unless($this->canManage($session, $user) && $user->isAdmin(), 403);
+        abort_unless($this->canManage($session, $user) && $user->isAttendanceManager(), 403);
         if ($session->status !== 'VALIDATED') {
             return $this->sync($session, $records);
         }
@@ -154,6 +157,9 @@ class AttendanceService
                 $locked->update(['status' => 'VALIDATED', 'validated_at' => now()]);
             }
             app(NotificationService::class)->queueForValidatedSession($locked);
+            foreach ($locked->records()->whereIn('status', ['ABSENT', 'LATE'])->get() as $record) {
+                app(AbsenceFollowUpService::class)->createForRecord($record);
+            }
 
             return $locked->fresh();
         });

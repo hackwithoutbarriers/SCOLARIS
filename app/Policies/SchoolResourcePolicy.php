@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class SchoolResourcePolicy
 {
-    public function before(User $user): ?bool
+    public function before(User $user, string $ability, mixed ...$targets): ?bool
     {
-        return $user->isSuperAdmin() ? true : null;
+        return $user->isSuperAdmin() ? $user->canUseSchoolIntervention(...$targets) : null;
     }
 
     public function viewAny(User $user): bool
