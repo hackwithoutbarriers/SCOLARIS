@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <style>
+    .stamp-text { font-family: 'Arial', sans-serif; font-weight: bold; fill: #003399; }
+    .stamp-border { stroke: #003399; fill: none; }
+  </style>
+
+  <!-- 1. Cercles délimitant la couronne (bande de texte) -->
+  <circle cx="200" cy="200" r="188" class="stamp-border" stroke-width="4"/>
+  <circle cx="200" cy="200" r="132" class="stamp-border" stroke-width="2"/>
+
+  <!-- Cercle intérieur pointillés pour la finition -->
+  <circle cx="200" cy="200" r="124" class="stamp-border" stroke-width="1.2" stroke-dasharray="5,3"/>
+
+  <!-- 2. Trajets d'écriture situés DANS la bande entre les 2 cercles -->
+  <!-- Trajet Haut (Sens horaire) -->
+  <path id="textPathTop" d="M 46,200 A 154,154 0 1,1 354,200" fill="none"/>
+  <!-- Trajet Bas (Sens anti-horaire : écriture de gauche à droite à l'endroit) -->
+  <path id="textPathBottom" d="M 34,200 A 166,166 0 0,0 366,200" fill="none"/>
+
+  <!-- 3. Textes dans la couronne -->
+  <text class="stamp-text" font-size="17" letter-spacing="1">
+    <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">
+      ★ ETS ALU LA SOLUTION ★
+    </textPath>
+  </text>
+
+  <text class="stamp-text" font-size="13" letter-spacing="0.8">
+    <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">
+      ★ ADAKPAMÉ-COLAS • LOMÉ - TOGO ★
+    </textPath>
+  </text>
+
+  <!-- 4. Contenu au centre du cachet -->
+  <text x="200" y="170" class="stamp-text" font-size="13" text-anchor="middle">MENUISERIE ALUMINIUM</text>
+  <text x="200" y="190" class="stamp-text" font-size="13" text-anchor="middle">&amp; VITRERIE</text>
+
+  <line x1="110" y1="205" x2="290" y2="205" stroke="#003399" stroke-width="1.5"/>
+
+  <text x="200" y="228" class="stamp-text" font-size="14" text-anchor="middle">Tél: +228 90 58 59 76</text>
+</svg>

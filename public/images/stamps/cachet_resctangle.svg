@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 240" width="500" height="240">
+  <style>
+    .rect-text { font-family: 'Arial', sans-serif; fill: #003399; }
+    .bold { font-weight: bold; }
+  </style>
+
+  <!-- Encadrement double -->
+  <rect x="10" y="10" width="480" height="220" rx="8" ry="8" fill="none" stroke="#003399" stroke-width="4"/>
+  <rect x="16" y="16" width="468" height="208" rx="5" ry="5" fill="none" stroke="#003399" stroke-width="1.5"/>
+
+  <!-- Contenu -->
+  <text x="250" y="55" class="rect-text bold" font-size="24" text-anchor="middle">ETS ALU LA SOLUTION</text>
+  <text x="250" y="80" class="rect-text bold" font-size="14" fill="#555555" text-anchor="middle">Menuiserie Aluminium &amp; Vitrerie</text>
+
+  <line x1="40" y1="95" x2="460" y2="95" stroke="#003399" stroke-width="2"/>
+
+  <text x="250" y="123" class="rect-text" font-size="14" text-anchor="middle">Adresse : Adakpamé-Colas, Lomé - Togo</text>
+  <text x="250" y="148" class="rect-text bold" font-size="15" text-anchor="middle">Tél : (+228) 90 58 59 76</text>
+
+  <line x1="40" y1="165" x2="460" y2="165" stroke="#003399" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <text x="50" y="198" class="rect-text" font-size="12" font-style="italic">Date : .... / .... / 202...</text>
+  <text x="350" y="198" class="rect-text bold" font-size="12">La Direction</text>
+</svg>
