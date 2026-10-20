@@ -60,6 +60,28 @@ php artisan students:import docs/examples/students-import.csv --school=1
 
 Le format de référence est [docs/examples/students-import.csv](docs/examples/students-import.csv).
 
+L’import guidé des élèves est disponible depuis « Élèves → Importer des
+élèves » pour les directeurs et secrétaires autorisés. Le MVP accepte des CSV
+UTF-8 uniquement, jusqu’à 5 Mo et 2 000 lignes, avec simulation, revue
+explicite des doublons et traitement reprenable par lots de 100 lignes. Il ne
+dépend pas d’un worker. La purge quotidienne supprime les fichiers et données
+de staging arrivés à expiration (30 jours par défaut); exécution manuelle :
+
+```bash
+php artisan student-imports:purge
+```
+
+En local, `STUDENT_IMPORT_DISK=local` convient. En production, configurer
+`STUDENT_IMPORT_DISK=s3` avec un bucket privé et persistant, puis fournir les
+mêmes variables `AWS_*` au Web Service et au Cron Job : le fichier doit rester
+accessible au traitement et à la purge, même après redéploiement. Les
+paramètres provisoires sont `STUDENT_IMPORT_MAX_ROWS`,
+`STUDENT_IMPORT_CHUNK_SIZE`, `STUDENT_IMPORT_MAX_FILE_SIZE` (octets),
+`STUDENT_IMPORT_UPLOADS_PER_HOUR` et `STUDENT_IMPORT_RETENTION_DAYS`; valider
+les plafonds sur une école pilote et
+les règles juridiques avant un premier import réel. Voir la
+[checklist de mise en production du module](docs/dev/onb-01-mise-en-production.md).
+
 ## Architecture
 
 Le métier est dans Laravel. Les modèles métier utilisent `BelongsToSchool` et `SchoolScope`; un Super Admin n'a pas de tenant fixe. Les policies refusent les accès inter-écoles et les opérations d'un enseignant/comptable sur les référentiels administratifs. Les activations d'années sont transactionnelles via `AcademicYearService`.
@@ -108,7 +130,8 @@ Render ou le fournisseur choisi; l'application ne prétend pas les créer.
 embarqué `/usr/local/bin/start-worker.sh` si les notifications
 ou les traitements financiers asynchrones sont activés. Le blueprint fournit
 également un cron quotidien à 05:00 UTC pour `php artisan schedule:run`, qui
-déclenche les relances de recouvrement idempotentes via
+déclenche la purge des imports expirés et les relances de recouvrement
+idempotentes via
 `/usr/local/bin/run-scheduler.sh`.
 
 ### Render sans CLI
