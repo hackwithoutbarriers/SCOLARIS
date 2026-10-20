@@ -21,6 +21,8 @@ use App\Models\ReportCardTemplate;
 use App\Models\ReportCardVersion;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\StudentImportBatch;
+use App\Models\StudentImportRow;
 use App\Models\Subject;
 use App\Models\SubjectConfig;
 use App\Models\TeacherAssignment;
@@ -32,6 +34,8 @@ use App\Policies\GradePolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\SchoolPolicy;
 use App\Policies\SchoolResourcePolicy;
+use App\Policies\StudentImportBatchPolicy;
+use App\Policies\StudentImportRowPolicy;
 use App\Policies\SecretaryResourcePolicy;
 use App\Policies\TimetableSlotPolicy;
 use App\Services\EmailNotificationProvider;
@@ -99,6 +103,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(TimetableSlot::class, TimetableSlotPolicy::class);
         Gate::policy(Certificate::class, SchoolResourcePolicy::class);
         Gate::policy(School::class, SchoolPolicy::class);
+        Gate::policy(StudentImportBatch::class, StudentImportBatchPolicy::class);
+        Gate::policy(StudentImportRow::class, StudentImportRowPolicy::class);
         foreach ([AcademicYear::class, ClassRoom::class, Enrollment::class, Guardian::class, Student::class, Subject::class, Term::class, TeacherAssignment::class, SubjectConfig::class, EvaluationRuleSet::class, Assessment::class, Grade::class, Appreciation::class, ReportCardTemplate::class, ReportCard::class, ReportCardVersion::class, AttendanceSession::class, AttendanceRecord::class] as $model) {
             Gate::policy($model, SchoolResourcePolicy::class);
         }
