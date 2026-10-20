@@ -5,5 +5,18 @@
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#1E3A8A",
-  "icons": []
+  "icons": [
+    {
+      "src": "/images/scolaris-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/scolaris-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }

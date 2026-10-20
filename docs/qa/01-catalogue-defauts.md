@@ -1,0 +1,22 @@
+# Phase 1 — Catalogue des défauts reproduits
+
+## Périmètre vérifié
+
+Ce catalogue contient les défauts effectivement reproduits jusqu'ici; il ne représente pas encore le balayage de toutes les routes, actions, modales, rôles et viewports demandé. Le smoke automatisé couvre l'accueil, la connexion et le tableau de bord de dix comptes de démonstration répartis sur deux écoles. Les Selects, formulaires métier, exports, impressions/PDF, accessibilité et routes restantes restent à parcourir.
+
+Dernière exécution complète de `npm run qa:ui` : le contrôle du pipeline et le smoke accueil/connexion passent; le test multi-rôle échoue de façon intermittente lors de la navigation vers `/admin` après une réponse Livewire 200 (`chrome-error://chromewebdata/`). Ce test multi-rôle a également passé lors d'une exécution complète précédente; sa stabilité reste à diagnostiquer, et le résultat global n'est donc pas déclaré vert.
+
+| ID | Route / surface | Rôle(s) | Viewport(s) | Environnement | Défaut reproduit | Preuve / capture | Gravité | Cause racine |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| UI-001 | `/`, `/admin/login` | Visiteurs et utilisateurs de tous rôles | 360, 390, 768, 1280, 1920 px | Local | La police calculée était DM Sans au lieu de Roboto. | Test Playwright avant/après; [capture avant](./captures/ui-001-login-before.png), [capture après](./captures/ui-001-login-after.png). | Mineur | Les feuilles de style partagées déclaraient une autre famille de police. Corrigé dans les feuilles partagées. |
+| UI-002 | `/admin/grades`, cellules de notes validées | Direction, censeur, enseignant autorisé | Tous; le style n'est pas dépendant du viewport | Build Docker de production, reproduit dans un contexte frontend isolé | Les classes Tailwind `.opacity-60` et `.bg-gray-100`, utilisées pour distinguer les notes validées, n'étaient pas générées. La note restait visible, mais son état l'était moins. | Build isolé avant correction sans `app/Filament` : classes absentes; test `asset-pipeline.spec.js` en échec avant correction. Capture après : [cellule de note validée](./captures/ui-002-grade-cell-after.png). | Mineur | Le stage frontend copiait `resources` et `public`, mais pas les sources PHP référencées par `@source '../../app/Filament/**/*.php'`. Corrigé dans le Dockerfile. |
+| UI-003 | `/admin/school-support`, actions d'intervention pour une école sélectionnée | Super-admin, contexte ouvert | Contrôle métier en base; appareil réel non mesuré | Local | « Configurer l'école » avait un texte blanc sans fond primaire; les autres actions n'appliquaient pas non plus les styles complets des boutons Filament. | Le test `SchoolSupportButtonStyleTest` échouait sur le HTML rendu avant correction (classes de couleur manquantes), puis passe après; tests d'intervention super-admin verts. Capture navigateur avant/après non disponible. | Majeur | Des boutons HTML bruts reprenaient `fi-btn` et parfois `fi-color-primary` sans les classes utilitaires de fond/texte rendues par `<x-filament::button>`. Corrigé en réutilisant le composant Filament. |
+| UI-004 | `/payments/{payment}/receipt` | Comptable autorisé | Local, test HTTP | Une demande de reçu pour un paiement confirmé sans relation `receipt` provoquait une exception lors de la lecture du numéro et une réponse 500. | `PaymentReceiptDownloadTest` reproduit la 500 avant correction; après correction, le cas sans reçu renvoie 409 avec un message explicite et le PDF avec reçu valide répond 200 (`application/pdf`). | Bloquant pour l'impression/téléchargement du reçu concerné | Le contrôleur et le modèle de reçu supposaient que chaque paiement avait un reçu. Le contrôleur vérifie maintenant statut et relation avant le rendu, journalise le cas incomplet et ne fabrique pas de reçu. |
+
+## Limites et points non évalués
+
+- Aucun défaut de liste déroulante n'a encore été reproduit ni écarté; les contrôles par rôle/école et les actions de tableau restent à faire.
+- Le paiement nº 2 de production n'a pas été inspecté. La reproduction locale confirme le défaut quand le reçu associé est absent; elle ne prouve pas pourquoi la relation est absente en production.
+- Les autres téléchargements/PDF recensés dans les contrôleurs n'ont pas encore fait l'objet d'une reproduction systématique.
+- Aucune capture n'inclut de nom d'élève ou de donnée réelle; UI-002 capture uniquement la cellule de note seedée.
+- Le build Docker complet et le rendu sur appareil Android réel ne sont pas encore validés.

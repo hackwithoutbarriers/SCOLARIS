@@ -6,6 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY resources resources
+COPY app/Filament app/Filament
 COPY public public
 COPY vite.config.js ./
 
@@ -47,6 +48,7 @@ RUN rm -f bootstrap/cache/*.php \
         --optimize-autoloader \
         --no-scripts \
     && php artisan package:discover --ansi \
+    && php artisan filament:assets --no-interaction \
     && composer clear-cache
 
 COPY --from=frontend /app/public/build ./public/build
