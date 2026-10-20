@@ -18,6 +18,11 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/test-results/
+/playwright-report/
+/docs/qa/captures/*
+!/docs/qa/captures/ui-001-login-before.png
+!/docs/qa/captures/ui-001-login-after.png
 /vendor
 Homestead.json
 Homestead.yaml
