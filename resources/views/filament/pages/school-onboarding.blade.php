@@ -11,6 +11,22 @@
             </div>
             <div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"><div class="h-full rounded-full bg-primary-600" style="width: {{ $this->progress }}%"></div></div>
         </div>
+        @php($nextStep = collect($steps)->first(fn ($step) => ! $step['complete']))
+        @if ($nextStep)
+            <div class="premium-card flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary-200 bg-primary-50 p-5 dark:border-primary-900 dark:bg-primary-950/30">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300">Prochaine action recommandée</p>
+                    <h3 class="mt-1 font-semibold">{{ $nextStep['title'] }}</h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $nextStep['description'] }}</p>
+                </div>
+                <x-filament::button tag="a" :href="$nextStep['url']">Continuer cette étape</x-filament::button>
+            </div>
+        @else
+            <div class="premium-card rounded-2xl border border-success-200 bg-success-50 p-5 dark:border-success-900 dark:bg-success-950/30">
+                <h3 class="font-semibold text-success-800 dark:text-success-200">Les éléments de démarrage sont configurés</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Les cinq étapes contiennent des données. Vous pouvez poursuivre les opérations quotidiennes depuis le tableau de bord.</p>
+            </div>
+        @endif
         <div class="grid gap-4 md:grid-cols-5">
             @foreach ($steps as $index => $step)
                 <a href="{{ $step['url'] }}" class="premium-card rounded-2xl border p-4 transition hover:border-primary-500 {{ auth()->user()->onboarding_step === $index + 1 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30' : 'bg-white dark:bg-gray-900' }}">
