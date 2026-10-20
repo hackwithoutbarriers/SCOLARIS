@@ -35,6 +35,7 @@ Les droits combinés correspondent à plusieurs opérations. Les actions financi
 | Indicateurs académiques complets | L | — | — | L | — | interv. |
 | Indicateurs financiers | L | — | L | — | — | interv. |
 | Dossiers nominatifs élèves et responsables | LCM | — | — | — | LCM | interv. |
+| Import élèves (lots, erreurs, fichiers et rapports) | LCMV | — | — | — | LCMV | interv. journalisée |
 | Élèves des classes / listes de présence | LCM | L affect. | — | L école | LCM | interv. |
 | Inscriptions / réinscriptions | LCM | — | — | — | LCM | interv. |
 | Certificats et registre de délivrance | LCM/E | — | — | — | LC/E | interv. |
@@ -121,6 +122,7 @@ Les règles sur les paramètres réglementaires et les textes demeurent soumises
 | `RegistrationApprovalTest` | L’approbation d’une demande pour une école existante par le super administrateur est refusée sans intervention ciblée et permise dans le contexte correspondant. |
 | `PhoneSignInMigrationTest` | La migration refuse les numéros dupliqués après normalisation et refuse son retour arrière si des utilisateurs sans e-mail existent. |
 | `UserAccessLifecycleTest` | L’édition d’un compte exige l’école exacte de l’intervention ; les changements rôle/activation sont auditables et atomiques ; l’URL d’un compte d’une autre école donne 404. |
+| `StudentImportAccessTest` | Import réservé au directeur/secrétaire; refus comptable/enseignant; les lots et lignes d’une autre école sont refusés par policy/service et l’URL directe d’un lot donne 404. |
 
 ## Limites de preuve
 
@@ -131,3 +133,7 @@ Les règles sur les paramètres réglementaires et les textes demeurent soumises
 ## Décision de clôture
 
 La Phase 2 est clôturée pour le périmètre ACL inventorié : les ressources Filament sont vérifiées par rôle, les lectures/écritures et téléchargements sensibles ont des tests ciblés, l’isolation inter-écoles et l’intervention temporaire sont éprouvées, et les changements de rôle/activation sont tracés. Les tests visuels/E2E et la signature Twilio restent des tâches distinctes des ACL et sont reportés aux phases appropriées.
+
+### Addendum IDEA-ONB-01
+
+La policy `StudentImportBatchPolicy` autorise Directeur/Secrétaire de leur école et limite le Super Admin à l’intervention temporaire; `StudentImportRowPolicy` hérite du périmètre du lot. La page, le rapport et le traitement vérifient également le lot courant. `StudentImportAccessTest` couvre ces rôles et l’URL directe d’un lot voisin. Le test de revue d’accès du rapport téléchargé et l’essai sur PostgreSQL restent à exécuter avant production pilote.

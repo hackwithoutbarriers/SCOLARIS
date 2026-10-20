@@ -22,6 +22,7 @@
 | Dépenses / caisse | LCMV | — | LCMV | — | — | Interv. |
 | Élèves / familles | LCM | — | — | — | LCM | Interv. |
 | Invitations / comptes | LCM | — | — | — | LCM | Interv. |
+| Import élèves (fichiers, lots, aperçu et rapports) | LCMV | — | — | — | LCMV | Interv. journalisée |
 | Paramètres école | LCM | — | — | — | — | Interv. |
 
 L = lecture / liste, C = créer, M = modifier, V = validation / publication, — = aucun accès, Interv. = accès strictement dans une intervention active et journalisée.
