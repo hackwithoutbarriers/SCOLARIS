@@ -12,6 +12,10 @@ class ListTeacherAssignments extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [Actions\CreateAction::make()];
+        return [
+            Actions\CreateAction::make()
+                ->label('Affecter un enseignant')
+                ->icon('heroicon-o-user-plus'),
+        ];
     }
 }

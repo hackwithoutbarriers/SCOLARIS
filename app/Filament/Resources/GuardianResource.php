@@ -20,7 +20,14 @@ class GuardianResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isDirector() === true || auth()->user()?->isSecretary() === true;
+        return auth()->user()?->isDirector() === true
+            || auth()->user()?->isSecretary() === true
+            || (auth()->user()?->isSuperAdmin() === true && auth()->user()->hasActiveSchoolIntervention());
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     public static function form(Form $form): Form
@@ -44,7 +51,7 @@ class GuardianResource extends Resource
             Tables\Columns\TextColumn::make('phone')->searchable(),
             Tables\Columns\TextColumn::make('email'),
             Tables\Columns\TextColumn::make('students_count')->counts('students')->label('Élèves'),
-        ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        ])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

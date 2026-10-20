@@ -4,10 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\RegistrationRequestResource\Pages;
 use App\Models\RegistrationRequest;
+use App\Models\School;
 use App\Services\RegistrationApprovalService;
-use Filament\Forms\Components\Textarea;
+use App\Services\StaffInvitationService;
+use App\Support\Tenancy\SchoolContext;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -29,6 +33,11 @@ class RegistrationRequestResource extends Resource
         return auth()->user()?->isSuperAdmin() || auth()->user()?->isDirector();
     }
 
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
@@ -43,30 +52,43 @@ class RegistrationRequestResource extends Resource
         return $table->headerActions([
             Tables\Actions\Action::make('inviteStaff')
                 ->label('Inviter un membre du personnel')
-                ->visible(fn (): bool => auth()->user()?->isSuperAdmin() || auth()->user()?->isDirector())
+                ->visible(fn (): bool => auth()->user()?->isDirector()
+                    || (auth()->user()?->isSuperAdmin()
+                        && auth()->user()->hasActiveSchoolIntervention()))
                 ->form([
                     TextInput::make('name')->required(),
-                    TextInput::make('email')->email()->required(),
+                    TextInput::make('email')->email()->required(fn (Get $get): bool => blank($get('phone'))),
                     TextInput::make('phone')
-                        ->required(fn (): bool => config('attendance.notifications.default_channel') === 'whatsapp'),
+                        ->tel()
+                        ->required(fn (Get $get): bool => blank($get('email'))),
                     Select::make('role')->label('Rôle principal')->options([
                         'teacher' => 'Enseignant',
                         'accountant' => 'Comptable',
                         'secretary' => 'Secrétaire',
+                        'censeur' => 'Censeur',
                     ])->required(),
                     Select::make('secondary_role')->label('Rôle secondaire (optionnel)')->options([
                         'teacher' => 'Enseignant',
                         'accountant' => 'Comptable',
                         'secretary' => 'Secrétaire',
+                        'censeur' => 'Censeur',
                     ]),
                     Select::make('school_id')
                         ->label('École')
-                        ->relationship('school', 'name')
+                        ->options(function (): array {
+                            $schoolId = app(SchoolContext::class)->id();
+
+                            return $schoolId
+                                ? School::query()->whereKey($schoolId)->pluck('name', 'id')->all()
+                                : [];
+                        })
+                        ->default(fn (): ?int => app(SchoolContext::class)->id())
                         ->visible(fn (): bool => auth()->user()?->isSuperAdmin())
+                        ->disabled()
                         ->required(fn (): bool => auth()->user()?->isSuperAdmin()),
                 ])
                 ->action(function (array $data): void {
-                    [$invitation, $token] = app(\App\Services\StaffInvitationService::class)
+                    [$invitation, $token] = app(StaffInvitationService::class)
                         ->create(auth()->user(), $data);
 
                     Notification::make()
@@ -86,7 +108,13 @@ class RegistrationRequestResource extends Resource
         ])->actions([
             Tables\Actions\Action::make('approve')
                 ->label('Approuver')->color('success')->requiresConfirmation()
-                ->visible(fn (RegistrationRequest $record): bool => $record->status === RegistrationRequest::PENDING)
+                ->visible(fn (RegistrationRequest $record): bool => $record->status === RegistrationRequest::PENDING
+                    && (auth()->user()?->isDirector()
+                        || (auth()->user()?->isSuperAdmin()
+                            && (($record->requested_role === 'director'
+                                && $record->request_type === 'new_school'
+                                && ! $record->school_id)
+                                || auth()->user()->hasActiveSchoolIntervention((int) $record->school_id)))))
                 ->action(fn (RegistrationRequest $record) => app(RegistrationApprovalService::class)->approve($record, auth()->user())),
             Tables\Actions\Action::make('reject')
                 ->label('Refuser')->color('danger')->requiresConfirmation()

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\ConductLabelResource\Pages;
 use App\Models\ConductLabel;
 use Filament\Forms;
@@ -12,9 +13,14 @@ use Filament\Tables\Table;
 
 class ConductLabelResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = ConductLabel::class;
+
     protected static ?string $navigationGroup = 'Paramétrage scolaire';
+
     protected static ?string $navigationLabel = 'Libellés de conduite';
+
     protected static ?string $navigationIcon = 'heroicon-o-hand-thumb-up';
 
     public static function form(Form $form): Form
@@ -32,8 +38,7 @@ class ConductLabelResource extends Resource
             Tables\Columns\TextColumn::make('label')->searchable(),
             Tables\Columns\TextColumn::make('sort_order'),
             Tables\Columns\IconColumn::make('active')->boolean(),
-        ])->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        ])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

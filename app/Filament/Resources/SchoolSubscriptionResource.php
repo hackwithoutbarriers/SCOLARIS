@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SchoolSubscriptionResource\Pages;
 use App\Models\SchoolSubscription;
 use App\Models\SubscriptionPlan;
+use App\Filament\Concerns\HasRoleNavigation;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,6 +14,7 @@ use Filament\Tables\Table;
 
 class SchoolSubscriptionResource extends Resource
 {
+    use HasRoleNavigation;
     protected static ?string $model = SchoolSubscription::class;
 
     protected static ?string $navigationGroup = 'Administration';
@@ -28,6 +30,11 @@ class SchoolSubscriptionResource extends Resource
         return auth()->user()?->isSuperAdmin() === true;
     }
 
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -37,7 +44,7 @@ class SchoolSubscriptionResource extends Resource
             Forms\Components\DatePicker::make('starts_at')->label('Début')->required(),
             Forms\Components\DatePicker::make('ends_at')->label('Fin'),
             Forms\Components\DatePicker::make('trial_ends_at')->label('Fin de l’essai'),
-            Forms\Components\Textarea::make('notes')->label('Notes'),
+            Forms\Components\Textarea::make('notes')->label('Remarques'),
         ])->columns(2);
     }
 

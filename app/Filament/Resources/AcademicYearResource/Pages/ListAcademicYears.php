@@ -12,6 +12,10 @@ class ListAcademicYears extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [Actions\CreateAction::make()];
+        return [
+            Actions\CreateAction::make()
+                ->label('Créer une année scolaire')
+                ->icon('heroicon-o-plus-circle'),
+        ];
     }
 }

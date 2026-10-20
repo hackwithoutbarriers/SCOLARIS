@@ -14,19 +14,37 @@ class EnrollmentResource extends Resource
 {
     protected static ?string $model = Enrollment::class;
 
-    protected static ?string $navigationGroup = 'Paramétrage scolaire';
+    protected static ?string $navigationGroup = 'Élèves et familles';
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
+    protected static ?string $navigationLabel = 'Inscriptions';
+
+    protected static ?string $modelLabel = 'inscription';
+
+    protected static ?string $pluralModelLabel = 'inscriptions';
+
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isDirector() === true || auth()->user()?->isSecretary() === true;
+        return auth()->user()?->isDirector() === true
+            || auth()->user()?->isSecretary() === true
+            || (auth()->user()?->isSuperAdmin() === true && auth()->user()->hasActiveSchoolIntervention());
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
     }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('student_id')->relationship('student', 'first_name')->searchable()->required(),
+            Forms\Components\Select::make('student_id')
+                ->label('Élève')
+                ->relationship('student', 'last_name')
+                ->getOptionLabelFromRecordUsing(fn ($record): string => trim($record->first_name.' '.$record->last_name).' — '.$record->student_number)
+                ->searchable(['first_name', 'last_name', 'student_number'])
+                ->required(),
             Forms\Components\Select::make('academic_year_id')->relationship('academicYear', 'name')->required(),
             Forms\Components\Select::make('class_room_id')->relationship('classRoom', 'name')->required(),
             Forms\Components\DatePicker::make('enrolled_at')->default(now())->required(),
@@ -37,11 +55,19 @@ class EnrollmentResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([Tables\Columns\TextColumn::make('student.full_name')->label('Élève'), Tables\Columns\TextColumn::make('classRoom.name')->label('Classe'), Tables\Columns\TextColumn::make('academicYear.name')->label('Année'), Tables\Columns\TextColumn::make('status')->label('Statut')->badge()])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        return $table->columns([
+            Tables\Columns\TextColumn::make('student.full_name')->label('Élève')->searchable()->weight('bold'),
+            Tables\Columns\TextColumn::make('classRoom.name')->label('Classe')->searchable(),
+            Tables\Columns\TextColumn::make('academicYear.name')->label('Année scolaire'),
+            Tables\Columns\TextColumn::make('enrollment_date')->label('Inscrit le')->date('d/m/Y'),
+            Tables\Columns\TextColumn::make('status')->label('Statut')->badge()->formatStateUsing(fn (string $state): string => $state === 'active' ? 'Active' : 'Retirée'),
+        ])->actions([
+            Tables\Actions\EditAction::make()->label('Modifier le suivi'),
+        ]);
     }
 
     public static function getPages(): array
     {
-        return ['index' => Pages\ListEnrollments::route('/'), 'create' => Pages\CreateEnrollment::route('/create'), 'edit' => Pages\EditEnrollment::route('/{record}/edit')];
+        return ['index' => Pages\ListEnrollments::route('/'), 'edit' => Pages\EditEnrollment::route('/{record}/edit')];
     }
 }

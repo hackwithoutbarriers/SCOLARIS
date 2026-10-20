@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SchoolResource\Pages;
 use App\Models\School;
+use App\Filament\Concerns\HasRoleNavigation;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
@@ -16,6 +17,7 @@ use Filament\Tables\Table;
 
 class SchoolResource extends Resource
 {
+    use HasRoleNavigation;
     protected static ?string $model = School::class;
 
     protected static ?string $navigationGroup = 'Administration';
@@ -25,6 +27,11 @@ class SchoolResource extends Resource
     public static function canAccess(): bool
     {
         return auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
     }
 
     public static function form(Form $form): Form
@@ -40,6 +47,14 @@ class SchoolResource extends Resource
             Toggle::make('due_reminders_enabled')->label('Rappels WhatsApp d’échéance')->default(true),
             Toggle::make('single_operator_mode')->label('Mode école mono-utilisateur')
                 ->helperText('Regroupe les accès quotidiens du directeur sans modifier les autorisations.'),
+            TextInput::make('expense_approval_threshold')->label('Seuil de validation des dépenses (F CFA)')
+                ->numeric()->minValue(0)->default(100000)->required(),
+            \Filament\Forms\Components\CheckboxList::make('education_cycles')
+                ->label('Cycles proposés par l’établissement')
+                ->options(School::educationCycleOptions())
+                ->default(array_keys(School::educationCycleOptions()))
+                ->columns(3)
+                ->helperText('Seuls les cycles sélectionnés seront proposés pour les classes et les inscriptions.'),
             Select::make('whatsapp_provider')->label('Fournisseur WhatsApp')->options([
                 'click_to_chat' => 'Lien Click-to-Chat (gratuit)',
                 'twilio' => 'Twilio (phase 2)',

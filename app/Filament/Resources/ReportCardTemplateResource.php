@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\ReportCardTemplateResource\Pages;
 use App\Models\ReportCardTemplate;
 use Filament\Forms;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class ReportCardTemplateResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = ReportCardTemplate::class;
 
     protected static ?string $navigationGroup = 'Scolarité';
@@ -42,7 +45,7 @@ class ReportCardTemplateResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([Tables\Columns\TextColumn::make('name')->searchable(), Tables\Columns\TextColumn::make('version'), Tables\Columns\IconColumn::make('active')->boolean(), Tables\Columns\TextColumn::make('updated_at')->dateTime()])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        return $table->columns([Tables\Columns\TextColumn::make('name')->searchable(), Tables\Columns\TextColumn::make('version'), Tables\Columns\IconColumn::make('active')->boolean(), Tables\Columns\TextColumn::make('updated_at')->dateTime()])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

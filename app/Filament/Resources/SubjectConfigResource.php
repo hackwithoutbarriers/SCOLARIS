@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\SubjectConfigResource\Pages;
 use App\Models\SubjectConfig;
 use Filament\Forms;
@@ -12,6 +13,8 @@ use Filament\Tables\Table;
 
 class SubjectConfigResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = SubjectConfig::class;
 
     protected static ?string $navigationGroup = 'Paramétrage scolaire';
@@ -45,7 +48,7 @@ class SubjectConfigResource extends Resource
             Tables\Columns\TextColumn::make('grading_method'),
             Tables\Columns\TextColumn::make('passing_score'),
             Tables\Columns\IconColumn::make('active')->boolean(),
-        ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        ])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

@@ -12,6 +12,10 @@ class ListClassRooms extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [Actions\CreateAction::make()];
+        return [
+            Actions\CreateAction::make()
+                ->label('Créer une classe')
+                ->icon('heroicon-o-plus-circle'),
+        ];
     }
 }

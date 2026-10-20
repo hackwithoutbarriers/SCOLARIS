@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\MentionThresholdResource\Pages;
 use App\Models\MentionThreshold;
 use Filament\Forms;
@@ -12,9 +13,14 @@ use Filament\Tables\Table;
 
 class MentionThresholdResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = MentionThreshold::class;
+
     protected static ?string $navigationGroup = 'Paramétrage scolaire';
+
     protected static ?string $navigationLabel = 'Mentions académiques';
+
     protected static ?string $navigationIcon = 'heroicon-o-star';
 
     public static function form(Form $form): Form
@@ -37,8 +43,7 @@ class MentionThresholdResource extends Resource
             Tables\Columns\TextColumn::make('minimum_score')->label('Minimum'),
             Tables\Columns\TextColumn::make('maximum_score')->label('Maximum'),
             Tables\Columns\IconColumn::make('active')->boolean(),
-        ])->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        ])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

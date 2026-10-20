@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\ReportCardResource\Pages;
 use App\Models\ReportCard;
 use App\Services\ReportCardService;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -14,6 +17,8 @@ use Illuminate\Support\Facades\Auth;
 
 class ReportCardResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = ReportCard::class;
 
     protected static ?string $navigationGroup = 'Scolarité';
@@ -21,6 +26,16 @@ class ReportCardResource extends Resource
     protected static ?string $navigationLabel = 'Bulletins';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return ($user?->isSuperAdmin() === true && $user->hasActiveSchoolIntervention())
+            || $user?->isDirector() === true
+            || $user?->isCenseur() === true
+            || $user?->hasRole('teacher') === true;
+    }
 
     public static function table(Table $table): Table
     {
@@ -35,7 +50,7 @@ class ReportCardResource extends Resource
             Tables\Actions\Action::make('submit')
                 ->label('Soumettre pour vérification')
                 ->icon('heroicon-o-paper-airplane')
-                ->visible(fn (ReportCard $record): bool => $record->status === 'draft' && auth()->user()?->role === 'teacher')
+                ->visible(fn (ReportCard $record): bool => $record->status === 'draft' && auth()->user()?->hasRole('teacher') === true)
                 ->requiresConfirmation()
                 ->action(function (ReportCard $record): void {
                     app(ReportCardService::class)->submitForReview($record);
@@ -73,8 +88,8 @@ class ReportCardResource extends Resource
                 ->icon('heroicon-o-pencil-square')
                 ->visible(fn (ReportCard $record): bool => $record->status !== 'published' && auth()->user()?->isDirector())
                 ->form([
-                    \Filament\Forms\Components\TextInput::make('mention')->label('Mention')->required(),
-                    \Filament\Forms\Components\Textarea::make('reason')->label('Motif')->required(),
+                    TextInput::make('mention')->label('Mention')->required(),
+                    Textarea::make('reason')->label('Motif')->required(),
                 ])
                 ->action(function (ReportCard $record, array $data): void {
                     app(ReportCardService::class)->overrideAcademicMention($record, $data['mention'], $data['reason']);
@@ -90,8 +105,13 @@ class ReportCardResource extends Resource
         $query = parent::getEloquentQuery();
         $user = Auth::user();
 
-        if ($user?->role === 'teacher') {
-            $query->whereHas('student.enrollments.classRoom.teacherAssignments', fn (Builder $assignment) => $assignment->where('teacher_id', $user->id));
+        if ($user?->hasRole('teacher') === true) {
+            $query->whereHas('student.enrollments', function (Builder $enrollment) use ($user): void {
+                $enrollment->whereColumn('enrollments.academic_year_id', 'report_cards.academic_year_id')
+                    ->whereHas('classRoom.teacherAssignments', fn (Builder $assignment) => $assignment
+                        ->where('teacher_id', $user->id)
+                        ->whereColumn('teacher_assignments.academic_year_id', 'enrollments.academic_year_id'));
+            });
         }
 
         return $query;

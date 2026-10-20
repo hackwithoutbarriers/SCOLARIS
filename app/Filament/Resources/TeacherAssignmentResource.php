@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\TeacherAssignmentResource\Pages;
 use App\Models\TeacherAssignment;
 use Filament\Forms;
@@ -12,6 +13,8 @@ use Filament\Tables\Table;
 
 class TeacherAssignmentResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = TeacherAssignment::class;
 
     protected static ?string $navigationGroup = 'Paramétrage scolaire';
@@ -32,7 +35,7 @@ class TeacherAssignmentResource extends Resource
     {
         return $table->columns([
             Tables\Columns\TextColumn::make('teacher.name')->label('Enseignant'), Tables\Columns\TextColumn::make('classRoom.name')->label('Classe'), Tables\Columns\TextColumn::make('subject.name')->label('Matière'), Tables\Columns\TextColumn::make('academicYear.name')->label('Année'),
-        ])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        ])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

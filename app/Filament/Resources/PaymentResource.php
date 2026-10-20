@@ -30,14 +30,27 @@ class PaymentResource extends Resource
         return auth()->user()?->isFinanceOperator() === true;
     }
 
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->hasRole('accountant') === true;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Select::make('student_id')->label('Élève')->options(fn () => Student::query()->orderBy('last_name')->get()->pluck('full_name', 'id'))->searchable()->required(),
             Forms\Components\TextInput::make('amount')->label('Montant')->numeric()->integer()->minValue(1)->required(),
-            Forms\Components\Select::make('payment_method')->label('Mode de paiement')->options(['CASH' => 'Espèces'])->default('CASH')->required(),
-            Forms\Components\TextInput::make('reference')->maxLength(120),
-            Forms\Components\Textarea::make('notes'),
+            Forms\Components\Select::make('payment_method')->label('Mode de paiement')->options([
+                'CASH' => 'Espèces',
+                'TMONEY' => 'TMoney',
+                'FLOOZ' => 'Flooz',
+                'BANK' => 'Virement bancaire',
+                'CHEQUE' => 'Chèque',
+                'OTHER' => 'Autre',
+            ])->default('CASH')->live()->required(),
+            Forms\Components\TextInput::make('reference')->label('Référence')->maxLength(120)
+                ->required(fn (Forms\Get $get): bool => $get('payment_method') !== 'CASH'),
+            Forms\Components\Textarea::make('notes')->label('Observations'),
         ])->columns(2);
     }
 

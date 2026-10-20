@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Filament\Resources\SubjectResource\Pages;
 use App\Models\Subject;
 use Filament\Forms;
@@ -12,6 +13,8 @@ use Filament\Tables\Table;
 
 class SubjectResource extends Resource
 {
+    use HasRoleNavigation;
+
     protected static ?string $model = Subject::class;
 
     protected static ?string $navigationGroup = 'Paramétrage scolaire';
@@ -25,7 +28,7 @@ class SubjectResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([Tables\Columns\TextColumn::make('name')->searchable(), Tables\Columns\TextColumn::make('code')])->actions([Tables\Actions\EditAction::make()])->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        return $table->columns([Tables\Columns\TextColumn::make('name')->searchable(), Tables\Columns\TextColumn::make('code')])->actions([Tables\Actions\EditAction::make()]);
     }
 
     public static function getPages(): array

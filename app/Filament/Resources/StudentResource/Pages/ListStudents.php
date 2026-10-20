@@ -17,7 +17,9 @@ class ListStudents extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Inscrire un élève')
+                ->icon('heroicon-o-user-plus'),
             Actions\Action::make('importCsv')
                 ->label('Importer des élèves')
                 ->icon('heroicon-o-arrow-up-tray')

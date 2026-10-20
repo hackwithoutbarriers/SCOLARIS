@@ -15,9 +15,13 @@ class CreateGrade extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
+        $assessment = Assessment::findOrFail($data['assessment_id']);
+        $student = Student::findOrFail($data['student_id']);
+        abort_unless(auth()->user()->can('manageGrades', [$assessment, $student]), 403);
+
         return app(GradeCalculationService::class)->saveGrade(
-            Assessment::findOrFail($data['assessment_id']),
-            Student::findOrFail($data['student_id']),
+            $assessment,
+            $student,
             $data['score'],
             ['remarks' => $data['remarks'] ?? null],
         );

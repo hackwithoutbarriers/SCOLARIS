@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TermResource\Pages;
 use App\Models\Term;
+use App\Filament\Concerns\HasRoleNavigation;
 use App\Services\TermClosureService;
 use App\Services\GradeCalculationService;
 use Filament\Forms;
@@ -14,6 +15,7 @@ use Filament\Tables\Table;
 
 class TermResource extends Resource
 {
+    use HasRoleNavigation;
     protected static ?string $model = Term::class;
 
     protected static ?string $navigationGroup = 'Paramétrage scolaire';
