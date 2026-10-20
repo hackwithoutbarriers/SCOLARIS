@@ -15,6 +15,12 @@ class AcademicOverview extends StatsOverviewWidget
 {
     use InteractsWithPageFilters;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->isDirector() === true
+            || auth()->user()?->isCenseur() === true;
+    }
+
     protected function getStats(): array
     {
         $period = DashboardPeriod::resolve($this->filters['period'] ?? null, $this->filters['from'] ?? null, $this->filters['to'] ?? null);
@@ -24,7 +30,7 @@ class AcademicOverview extends StatsOverviewWidget
 
         return [
             Stat::make('Élèves évalués', $evaluated ?: Student::query()->whereBetween('created_at', [$period['from'], $period['to']])->count())->description($period['label'])->color('primary'),
-            Stat::make('Moyenne générale', number_format($average, 2).' %')->color($average >= 50 ? 'success' : 'warning'),
+            Stat::make('Moyenne générale', number_format($average, 0).' %')->color($average >= 50 ? 'success' : 'warning'),
             Stat::make('Matières sans notes', $missing)->color($missing ? 'warning' : 'success'),
             Stat::make('Bulletins brouillon', ReportCard::query()->where('status', 'draft')->count())->color('warning'),
             Stat::make('Bulletins à valider', ReportCard::query()->whereIn('status', ['review', 'conseil_de_classe', 'approved'])->count())->color('primary'),

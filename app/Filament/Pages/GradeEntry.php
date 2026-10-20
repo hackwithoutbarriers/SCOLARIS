@@ -6,8 +6,8 @@ use App\Models\Assessment;
 use App\Models\Enrollment;
 use App\Models\Student;
 use App\Services\GradeCalculationService;
-use App\Filament\Pages\Dashboard;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -33,7 +33,9 @@ class GradeEntry extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isDirector() === true || auth()->user()?->role === 'teacher';
+        return auth()->user()?->isDirector() === true
+            || auth()->user()?->hasRole('teacher') === true
+            || (auth()->user()?->isSuperAdmin() === true && auth()->user()->hasActiveSchoolIntervention());
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -54,7 +56,7 @@ class GradeEntry extends Page implements HasForms
             Select::make('assessment_id')
                 ->label('Évaluation')
                 ->options(fn () => Assessment::query()->with('subjectConfig.subject')->when(
-                    auth()->user()?->role === 'teacher',
+                    auth()->user()?->hasRole('teacher') === true,
                     fn (Builder $query) => $query->where('teacher_id', auth()->id())
                 )->latest('assessment_date')->get()->mapWithKeys(fn (Assessment $assessment) => [
                     $assessment->id => $assessment->subjectConfig?->subject?->name.' — '.$assessment->title.' (max '.$assessment->max_score.')',
@@ -64,14 +66,14 @@ class GradeEntry extends Page implements HasForms
                 ->required()
                 ->afterStateUpdated(function ($state, Set $set): void {
                     $assessment = $state ? Assessment::query()->with('subjectConfig')->whereKey($state)->when(
-                        auth()->user()?->role === 'teacher',
+                        auth()->user()?->hasRole('teacher') === true,
                         fn (Builder $query) => $query->where('teacher_id', auth()->id())
                     )->first() : null;
                     $classRoomId = $assessment?->subjectConfig?->class_room_id;
                     $students = $assessment
                         ? Enrollment::query()->with('student')->where('academic_year_id', $assessment->subjectConfig?->academic_year_id)
                             ->when($classRoomId, fn ($query) => $query->where('class_room_id', $classRoomId))
-                            ->when(auth()->user()?->role === 'teacher', fn (Builder $query) => $query->whereHas(
+                            ->when(auth()->user()?->hasRole('teacher') === true, fn (Builder $query) => $query->whereHas(
                                 'classRoom.teacherAssignments',
                                 fn (Builder $assignment) => $assignment
                                     ->where('teacher_id', auth()->id())
@@ -90,7 +92,7 @@ class GradeEntry extends Page implements HasForms
                 ->schema([
                     TextInput::make('student_name')->label('Élève')->disabled()->dehydrated(false),
                     TextInput::make('score')->label('Note')->numeric()->minValue(0)->inputMode('decimal')->placeholder('—'),
-                    TextInput::make('student_id')->hidden()->required(),
+                    Hidden::make('student_id')->required()->rules(['integer']),
                 ])
                 ->columns(['default' => 1, 'md' => 3])
                 ->addable(false)->deletable(false)->reorderable(false)
@@ -116,7 +118,7 @@ class GradeEntry extends Page implements HasForms
     {
         $state = $this->form->getState();
         $assessment = Assessment::query()->when(
-            auth()->user()?->role === 'teacher',
+            auth()->user()?->hasRole('teacher') === true,
             fn (Builder $query) => $query->where('teacher_id', auth()->id())
         )->findOrFail($state['assessment_id']);
         $saved = 0;

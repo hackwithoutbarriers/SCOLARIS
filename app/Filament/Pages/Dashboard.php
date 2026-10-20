@@ -55,9 +55,13 @@ class Dashboard extends BaseDashboard
             return [SuperAdminOverview::class, SchoolSupportOverview::class];
         }
 
-        $widgets = [RoleActionCenter::class, SchoolStatsOverview::class, AcademicOverview::class];
+        $widgets = [RoleActionCenter::class, SchoolStatsOverview::class];
 
-        if (auth()->user()?->isAdmin()) {
+        if (auth()->user()?->isDirector() || auth()->user()?->isCenseur()) {
+            $widgets[] = AcademicOverview::class;
+        }
+
+        if (auth()->user()?->isAttendanceManager()) {
             $widgets[] = AttendanceOverview::class;
         }
 

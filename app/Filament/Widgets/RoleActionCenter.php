@@ -31,7 +31,25 @@ class RoleActionCenter extends StatsOverviewWidget
     {
         $user = auth()->user();
 
-        if ($user?->role === 'teacher') {
+        if ($user?->isCenseur() === true) {
+            $absences = AttendanceRecord::query()->where('status', 'ABSENT')->whereHas('session', fn ($query) => $query->whereDate('session_date', today()))->count();
+            $missingGrades = Grade::query()->whereNull('score')->count();
+            $toPublish = ReportCard::query()->whereIn('status', ['review', 'conseil_de_classe', 'approved'])->count();
+
+            return [
+                Stat::make('Absences à traiter', $absences)
+                    ->color($absences ? 'danger' : 'success')
+                    ->url(AbsenceWorklist::getUrl()),
+                Stat::make('Notes manquantes', $missingGrades)
+                    ->color($missingGrades ? 'warning' : 'success')
+                    ->url(MissingGrades::getUrl()),
+                Stat::make('Bulletins à suivre', $toPublish)
+                    ->color($toPublish ? 'warning' : 'success')
+                    ->url(ReportCardResource::getUrl()),
+            ];
+        }
+
+        if ($user?->hasRole('teacher') === true && ! $user->isDirector()) {
             $classes = $user->teacherAssignments()->distinct('class_room_id')->count('class_room_id');
             $todaySessions = AttendanceSession::query()
                 ->where('teacher_id', $user->id)
@@ -63,7 +81,7 @@ class RoleActionCenter extends StatsOverviewWidget
             ];
         }
 
-        if ($user?->role === 'accountant') {
+        if ($user?->hasRole('accountant') === true && ! $user->isDirector()) {
             $outstanding = (int) Invoice::query()
                 ->whereIn('status', [Invoice::ISSUED, Invoice::PARTIALLY_PAID, Invoice::OVERDUE])
                 ->get()
@@ -82,6 +100,16 @@ class RoleActionCenter extends StatsOverviewWidget
                     ->description('Factures en retard')
                     ->color($overdue ? 'danger' : 'success')
                     ->url(CollectionCenter::getUrl(['status' => Invoice::OVERDUE])),
+            ];
+        }
+
+        if ($user?->isSecretary() === true && ! $user->isDirector()) {
+            $absences = AttendanceRecord::query()->whereIn('status', ['ABSENT', 'LATE'])->whereHas('session', fn ($query) => $query->whereDate('session_date', today()))->count();
+
+            return [
+                Stat::make('Absences à suivre', $absences)
+                    ->color($absences ? 'warning' : 'success')
+                    ->url(AbsenceWorklist::getUrl()),
             ];
         }
 

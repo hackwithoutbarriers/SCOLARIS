@@ -3,9 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Models\Assessment;
-use Filament\Pages\Page;
-use App\Filament\Pages\Dashboard;
 use Filament\Actions\Action;
+use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -23,7 +22,10 @@ class MissingGrades extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isDirector() === true || auth()->user()?->role === 'teacher';
+        return auth()->user()?->isDirector() === true
+            || auth()->user()?->isCenseur() === true
+            || auth()->user()?->hasRole('teacher') === true
+            || (auth()->user()?->isSuperAdmin() === true && auth()->user()->hasActiveSchoolIntervention());
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -38,8 +40,8 @@ class MissingGrades extends Page
         return Assessment::query()
             ->with(['subjectConfig.subject', 'term', 'teacher'])
             ->whereDoesntHave('grades')
-            ->when($user?->role === 'teacher', fn (Builder $query) => $query->where('teacher_id', $user->id))
-            ->when($user?->role === 'teacher', fn (Builder $query) => $query->whereHas(
+            ->when($user?->hasRole('teacher') === true, fn (Builder $query) => $query->where('teacher_id', $user->id))
+            ->when($user?->hasRole('teacher') === true, fn (Builder $query) => $query->whereHas(
                 'subjectConfig.classRoom.teacherAssignments',
                 fn (Builder $assignment) => $assignment->where('teacher_id', $user->id)
             ))

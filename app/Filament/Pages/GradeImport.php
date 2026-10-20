@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Services\GradeCsvImporter;
-use App\Filament\Pages\Dashboard;
+use App\Support\Tenancy\SchoolContext;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -27,10 +27,14 @@ class GradeImport extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isDirector() === true;
+        return auth()->user()?->isDirector() === true
+            || (auth()->user()?->isSuperAdmin() === true && auth()->user()->hasActiveSchoolIntervention());
     }
 
-    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
 
     public ?array $data = [];
 
@@ -70,7 +74,9 @@ class GradeImport extends Page implements HasForms
         $state = $this->form->getState();
         $path = Storage::disk('local')->path($state['file']);
         abort_unless($this->preview !== [], 422, 'Prévisualisez le fichier avant de confirmer l’import.');
-        $this->result = $importer->import($path, (int) auth()->user()->school_id);
+        $schoolId = app(SchoolContext::class)->id() ?? auth()->user()->school_id;
+        abort_unless($schoolId, 403);
+        $this->result = $importer->import($path, (int) $schoolId);
         Notification::make()->success()->title('Import terminé')->body("{$this->result['created']} importée(s), {$this->result['errors']} erreur(s).")->send();
     }
 

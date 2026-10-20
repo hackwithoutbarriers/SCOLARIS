@@ -2,17 +2,16 @@
 
 namespace App\Filament\Pages;
 
+use App\Http\Controllers\NotificationController;
 use App\Models\ClassRoom;
 use App\Models\ReportCard;
 use App\Models\Term;
+use App\Services\Notifications\SchoolMailerService;
+use App\Services\PhoneNumberFormatter;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
-use Filament\Actions\Action;
-use App\Filament\Pages\Dashboard;
-use App\Http\Controllers\NotificationController;
-use App\Services\PhoneNumberFormatter;
-use App\Services\Notifications\SchoolMailerService;
 use Illuminate\Support\Collection;
 
 class ReportCardTracking extends Page
@@ -33,10 +32,14 @@ class ReportCardTracking extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() === true;
+        return auth()->user()?->isAdmin() === true
+            || auth()->user()?->isCenseur() === true;
     }
 
-    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
 
     public function filtersForm(Form $form): Form
     {

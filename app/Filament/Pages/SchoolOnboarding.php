@@ -4,11 +4,11 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\AcademicYearResource;
 use App\Filament\Resources\ClassRoomResource;
-use App\Filament\Resources\StudentResource;
-use App\Filament\Resources\UserResource;
+use App\Filament\Resources\RegistrationRequestResource;
+use App\Models\Enrollment;
 use App\Models\AcademicYear;
 use App\Models\ClassRoom;
-use App\Models\Student;
+use App\Models\StudentImportBatch;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -31,20 +31,46 @@ class SchoolOnboarding extends Page
         return auth()->user()?->isDirector() === true;
     }
 
-    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
 
     public function getSteps(): array
     {
         $user = auth()->user();
         $schoolId = $user->school_id;
+        $activeImport = $schoolId === null ? null : StudentImportBatch::query()
+            ->where('school_id', $schoolId)
+            ->whereIn('status', ['uploaded', 'analyzed', 'mapped', 'previewed', 'processing', 'partial', 'failed'])
+            ->latest('created_at')
+            ->latest('id')
+            ->first();
+        $studentStepDescription = $activeImport
+            ? 'Un import est à reprendre ('.$this->statusLabel($activeImport->status).'). Continuez la vérification sans retéléverser le fichier.'
+            : 'Importez votre première cohorte et vérifiez les inscriptions.';
 
         return [
             ['title' => 'École', 'description' => 'Votre établissement est rattaché à votre compte.', 'complete' => $schoolId !== null, 'url' => Dashboard::getUrl()],
-            ['title' => 'Année scolaire et périodes', 'description' => 'Créez l’année et ses périodes avant les classes.', 'complete' => AcademicYear::query()->exists(), 'url' => AcademicYearResource::getUrl()],
-            ['title' => 'Classes', 'description' => 'Organisez les classes et leurs niveaux.', 'complete' => ClassRoom::query()->exists(), 'url' => ClassRoomResource::getUrl()],
-            ['title' => 'Utilisateurs', 'description' => 'Invitez les enseignants et comptables nécessaires.', 'complete' => User::query()->where('school_id', $schoolId)->whereKey('id', '!=', $user->id)->exists(), 'url' => UserResource::getUrl()],
-            ['title' => 'Élèves', 'description' => 'Importez ou créez les élèves de l’établissement.', 'complete' => Student::query()->exists(), 'url' => StudentResource::getUrl()],
+            ['title' => 'Année scolaire et périodes', 'description' => 'Créez l’année et ses périodes avant les classes.', 'complete' => AcademicYear::query()->where('school_id', $schoolId)->exists(), 'url' => AcademicYearResource::getUrl()],
+            ['title' => 'Classes', 'description' => 'Organisez les classes et leurs niveaux.', 'complete' => ClassRoom::query()->where('school_id', $schoolId)->exists(), 'url' => ClassRoomResource::getUrl()],
+            ['title' => 'Utilisateurs', 'description' => 'Invitez les enseignants et comptables nécessaires.', 'complete' => User::query()->where('school_id', $schoolId)->whereKey('id', '!=', $user->id)->exists(), 'url' => RegistrationRequestResource::getUrl()],
+            ['title' => 'Élèves', 'description' => $studentStepDescription, 'complete' => Enrollment::query()->where('school_id', $schoolId)->exists(), 'url' => $activeImport ? StudentImport::getUrl(['batch' => $activeImport->id]) : StudentImport::getUrl()],
         ];
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'uploaded' => 'fichier reçu',
+            'analyzed' => 'analyse terminée',
+            'mapped' => 'colonnes à vérifier',
+            'previewed' => 'simulation prête',
+            'processing' => 'traitement en cours',
+            'partial' => 'revue à terminer',
+            'failed' => 'traitement interrompu',
+            default => 'import en cours',
+        };
     }
 
     public function getProgressProperty(): int
