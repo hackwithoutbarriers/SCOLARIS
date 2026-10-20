@@ -1,0 +1,6 @@
+Matricule,Nom,Prénom,Date de naissance,Sexe,Classe,Tél parent,Contact tuteur,Note
+SEC-001,DOUÉ,Esi,15/08/2010,Féminin,3ème A,90-00-10-01,"Ama Doué / Kossi Doué",deux responsables
+SEC-002,KOUAMÉ,Komlan,21-02-09,Masculin,2nde C,0022890001002,Kafui Kouamé,année sur deux chiffres à vérifier
+SEC-003,Agbéko,Sena,2011-12-05,F,4e D,90.00.10.03,Yawa Agbéko,format ISO
+SEC-004,ATCHA,Afi,31/11/2010,F,3ème A,90001004,Ama Atcha,date impossible
+SEC-005,AYIVI,Kossi,05/06/2010,M,Seconde A4,90001005,Komi Ayivi,libellé de classe alternatif

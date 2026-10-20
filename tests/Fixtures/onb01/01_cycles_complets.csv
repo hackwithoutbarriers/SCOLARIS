@@ -1,0 +1,32 @@
+﻿Jeu synthétique — École Démo Togo;Année 2026-2027
+Liste préparatoire de rentrée;Données fictives;Ne pas importer la ligne de total
+N° matricule;Nom de l'élève;Prénom(s);Date de naissance;Sexe;Classe;Tél parent;Responsables;Colonne inutile
+MAT-001;AKAKPO;Ama;12/05/2019;F;Petite section; +228 90 00 00 01 ;Kossi Akakpo;interne
+;Afi K.;KOUASSI;12-05-18;féminin;Moyenne section;90000002;Ama Kouassi;interne
+MAT-003;DOSSOU;Koffi;2017-06-14;Masculin;Grande section;0022890000003;Komi Dossou;interne
+PRI-001;AYIVI;Akouvi;2016-09-01;F;CI;90.00.00.04;Yawa Ayivi;interne
+PRI-002;KONDO;Kodjo;2015-08-22;M;CP1;90-00-00-05;Esso Kondo;interne
+PRI-003;Mensah;Abla;2015-03-11;féminin;CP2;90 00 00 06;Akossiwa Mensah;interne
+PRI-004;KPATCHA;Kossi;2014-04-19;Masculin;CE1;90000007 / 91000007;Koffi Kpatcha | Ama Kpatcha;interne
+PRI-005;ADJOVI;Eyram;2014-11-09;F;CE2;0022891000008;Mawuli Adjovi;interne
+PRI-006;AGBEKO;Sena;2013-12-31;M;CM1;90 00 00 09;Edem Agbeko;interne
+PRI-007;Tchalla;Komi;2013-01-03;M;CM2;90000010;Kafui Tchalla;interne
+COL-001;Baba;Yawa;2012-02-29;F;6ème A;90.00.00.11;Komlan Baba;interne
+COL-002;ATSU;Kodjo;2012-07-08;Masculin;6e A;90000012;Dela Atsu;interne
+COL-003;Afi;Sika;2011-05-17;F;5e B;90000013;Yao Afi;interne
+COL-004;KOUAME;Kokou;2010-10-25;M;6eme a;90000014;Sena Kouame;interne
+COL-005;ABALO;Akou;2009-09-30;féminin;3ème C;90000015;Komi Abalo;interne
+LYC-001;Kossi;Elom;2008-03-14;M;Seconde A4;90000016;Akou Kossi;interne
+LYC-002;SODJI;Esi;2008-11-22;F;2nde C;90000017;Kafui Sodji;interne
+LYC-003;AÏSSI;Komlan;2007-01-19;Masculin;1ère D;90000018;Afi Aïssi;interne
+LYC-004;AMEGASHIE;Mawuli;2007-06-28;M;Première A4;90000019;Kossi Amegashie;interne
+LYC-005;KODJO;Afi;2006-12-01;F;Tle D;90000020;Ama Kodjo;interne
+LYC-006;KODJO;Sena;2006-02-14;M;Terminale D;90000021;Yawa Kodjo;interne
+MAT-001;AKAKPO;Ama;12/05/2019;F;Petite section;90000022;Kossi Akakpo;matricule répété, ligne exacte
+DOUBLON-001;AKAKPO;Ama;12/05/2019;F;Petite section;90000023;Kossi Akakpo;matricule distinct, identité exacte candidate
+APPROX-001;AKAKPA;Ama;12/05/2019;F;Petite section;90000024;Kossi Akakpo;faute de frappe à vérifier
+ERR-DATE;TETE;Kossi;31/02/2014;M;CM2;90000025;Ama Tete;date impossible
+WARN-TEL;AGBO;Esi;15/06/2015;F;CE1;90 00 00 26 / 91 00 00 26;Kossi Agbo;deux numéros à arbitrer
+ERR-TEL;FOLLY;Komi;04/07/2013;M;CM1;900026;Yawa Folly;numéro trop court
+;;;;;;;; 
+TOTAL;;;;;;;27 élèves

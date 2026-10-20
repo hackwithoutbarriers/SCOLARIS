@@ -7,6 +7,7 @@ use App\Filament\Pages\CollectionCenter;
 use App\Filament\Pages\GradeEntry;
 use App\Filament\Pages\MissingGrades;
 use App\Filament\Pages\SchoolOnboarding;
+use App\Filament\Pages\StudentImport;
 use App\Filament\Resources\AcademicYearResource;
 use App\Filament\Resources\AssessmentResource;
 use App\Filament\Resources\CertificateResource;
@@ -34,8 +35,10 @@ use App\Filament\Resources\UserResource;
 use App\Filament\Widgets\AcademicOverview;
 use App\Filament\Widgets\AttendanceOverview;
 use App\Models\School;
+use App\Models\StudentImportBatch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -51,10 +54,12 @@ class RoleNavigationVisibilityTest extends TestCase
 
         $this->actingAs($accountant);
         $this->assertFalse(GradeEntry::shouldRegisterNavigation());
+        $this->assertFalse(StudentImport::shouldRegisterNavigation());
         $this->assertFalse(GradeResource::canViewAny());
         $this->assertFalse(AssessmentResource::canViewAny());
         $this->assertTrue(CollectionCenter::shouldRegisterNavigation());
         $this->get('/admin/grade-entry')->assertForbidden();
+        $this->get('/admin/student-import')->assertForbidden();
 
         $this->actingAs($teacher);
         $this->assertTrue(GradeEntry::shouldRegisterNavigation());
@@ -105,9 +110,13 @@ class RoleNavigationVisibilityTest extends TestCase
         $this->assertTrue(TimetableSlotResource::canViewAny());
         $this->assertTrue(TimetableSlotResource::canCreate());
         $this->assertTrue(RegistrationRequestResource::canViewAny());
+        $this->assertTrue(StudentImport::shouldRegisterNavigation());
+        $this->assertTrue(Gate::forUser($director)->allows('create', StudentImportBatch::class));
 
         Livewire::test(SchoolOnboarding::class)
             ->assertSee('/admin/registration-requests');
+        Livewire::test(StudentImport::class)
+            ->assertSee('Fichier CSV');
 
         $this->actingAs($superAdmin);
         foreach ($resources as $resource) {
@@ -116,6 +125,7 @@ class RoleNavigationVisibilityTest extends TestCase
         $this->assertTrue(SchoolResource::canViewAny());
         $this->assertTrue(SchoolSubscriptionResource::canViewAny());
         $this->assertFalse(UserResource::canViewAny());
+        $this->assertFalse(StudentImport::shouldRegisterNavigation());
 
         $this->withSession([
             'scolaris_intervention.school_id' => $school->id,
@@ -125,6 +135,7 @@ class RoleNavigationVisibilityTest extends TestCase
             $this->assertTrue($resource::canViewAny(), $resource.' should be visible during the selected-school intervention');
         }
         $this->assertTrue(UserResource::canViewAny());
+        $this->assertTrue(StudentImport::shouldRegisterNavigation());
 
         $this->actingAs($teacher);
         $this->assertTrue(TimetableSlotResource::canViewAny());
@@ -132,6 +143,7 @@ class RoleNavigationVisibilityTest extends TestCase
 
         $this->actingAs($secretary);
         $this->assertTrue(StudentResource::canViewAny());
+        $this->assertTrue(StudentImport::shouldRegisterNavigation());
         $this->assertTrue(EnrollmentResource::canViewAny());
         $this->assertTrue(CertificateResource::canViewAny());
         $this->assertTrue(TimetableSlotResource::canViewAny());

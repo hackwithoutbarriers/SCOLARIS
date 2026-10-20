@@ -1,0 +1,12 @@
+Note du secrétariat;Fichier fictif
+Exercice;2026-2027
+Matricule;Nom de l'élève;Prénom(s);Né(e) le;Sexe;Classe;Tél parent;Contact tuteur;Observations
+CON-001;AGBO;Eyram;2015-07-01;F;CE2;90002001;Ama Agbo;valide
+CON-001;AGBO;Eyram;2015-07-01;F;CE2;90002002;Kossi Agbo;matricule dupliqué
+CON-003;KPATCHA;Sena;2014-04-12;M;CM1;90002003;Yawa Kpatcha;valide
+CON-004;KPATCHA;Sena;2014-04-12;M;CM1;90002004;Yawa Kpatcha;personne exacte candidate, matricule différent
+CON-005;TCHALLA;Afi;texte inconnu;F;CM2;90002005;Komi Tchalla;date à corriger
+CON-006;MENSAH;Kossi;2013-09-23;M;6ème A;90002006;Ama Mensah;valide
+CON-007;MENSAH;Kossi;2013-09-23;M;Sixième A;90002007;Ama Mensah;classe équivalente, doublon potentiel
+CON-008;SODJI;Kafui;2014-02-29;F;4ème B;90002008;Yawa Sodji;date impossible
+CON-009;AYI;Esi;2015-03-10;F;CE1;90002009;Ama Ayi;valide
