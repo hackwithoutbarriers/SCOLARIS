@@ -3,6 +3,8 @@
 namespace App\Models\Concerns;
 
 use App\Models\AuditLog;
+use App\Models\Guardian;
+use App\Models\Student;
 
 trait Auditable
 {
@@ -23,6 +25,12 @@ trait Auditable
 
     protected function writeAudit(string $action, array $oldValues, array $newValues): void
     {
+        if ($this instanceof Student || $this instanceof Guardian) {
+            $safeFields = ['school_id', 'status', 'active'];
+            $oldValues = array_intersect_key($oldValues, array_flip($safeFields));
+            $newValues = array_intersect_key($newValues, array_flip($safeFields));
+        }
+
         AuditLog::withoutEvents(function () use ($action, $oldValues, $newValues): void {
             AuditLog::create([
                 'school_id' => $this->school_id ?? auth()->user()?->school_id,
